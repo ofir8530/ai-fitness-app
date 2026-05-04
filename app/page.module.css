@@ -39,3 +39,38 @@
 .primaryButton:hover {
   background-color: #1d4ed8;
 }
+
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.primaryButton {
+  background-color: #3b82f6;
+  color: white;
+  padding: 0.8rem 2rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.secondaryButton {
+  background-color: #10b981;
+  color: white;
+  padding: 0.8rem 2rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.backButton {
+  margin-top: 1rem;
+  background: none;
+  border: none;
+  color: #666;
+  text-decoration: underline;
+  cursor: pointer;
+}
