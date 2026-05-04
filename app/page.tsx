@@ -1,5 +1,6 @@
 // 1. מייבאים את האובייקט styles מהקובץ שיצרנו
 import styles from './page.module.css';
+import UserForm from '../components/UserForm';
 
 export default function Home() {
   return (
