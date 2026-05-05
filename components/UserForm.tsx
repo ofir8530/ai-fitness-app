@@ -9,6 +9,7 @@ export default function UserForm() {
   
   const [formData, setFormData] = useState({
     age: '',
+    gender: 'female',
     weight: '',
     height: '',
     goal: 'maintain',
@@ -44,6 +45,14 @@ export default function UserForm() {
       <div className={styles.inputGroup}>
         <label>גיל</label>
         <input type="number" name="age" value={formData.age} onChange={handleChange} placeholder="26" />
+      </div>
+
+      <div className={styles.formGroup}>
+        <label>מין:</label>
+        <select name="gender" value={formData.gender} onChange={handleChange}>
+          <option value="female">אישה</option>
+          <option value="male">גבר</option>
+        </select>
       </div>
 
       <div className={styles.inputGroup}>
