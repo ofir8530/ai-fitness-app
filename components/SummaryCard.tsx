@@ -1,20 +1,32 @@
 "use client";
-import styles from './SummaryCard.module.css'; // ניצור קובץ CSS נפרד בשבילו
+import styles from './SummaryCard.module.css'; 
+import { calculateNutritionTargets } from '../utils/calculations';
 
 interface SummaryProps {
   data: {
     age: string;
+    gender:string;
     weight: string;
     height: string;
     goal: string;
-    targetWeight?: string; // הוספנו משקל יעד
-    diet?: string; // הוספנו את העדפות התזונה כמחרוזת
+    targetWeight?: string;
+    diet?: string;
+    activityLevel: number;
   };
 }
 
 export default function SummaryCard({ data }: SummaryProps) {
   // לוגיקה קטנה להצגת הדיאטה בצורה יפה
   const dietList = data.diet ? data.diet.split(',') : [];
+  const targets = calculateNutritionTargets({
+    age: 26, 
+    weight: Number(data.weight),
+    height: Number(data.height),
+    goal: data.goal,
+    gender: data.gender || 'female',
+    activityLevel: 1.4 // הוספת הנתון שחסר ל-TypeScript
+
+  });
 
   return (
     <div className={styles.card}>
@@ -33,9 +45,12 @@ export default function SummaryCard({ data }: SummaryProps) {
       )}
 
       <div className={styles.aiInsights}>
-        <h4>תובנות AI:</h4>
-        <p>מכיוון שבחרת ב-{data.goal === 'lose' ? 'ירידה במשקל' : 'מטרה אחרת'}, נתאים לך תפריט {data.diet?.includes('kosher') ? 'כשר' : ''}...</p>
+          <h4>היעדים היומיים שלך:</h4>
+          <p>קלוריות למטרה שלך: <strong>{targets.dailyCalories} קק"ל</strong></p>
+          <p>חלבון מומלץ: <strong>{targets.protein} גרם</strong></p>
+          <p>שומן: <strong>{targets.fats} גרם</strong> | פחמימות: <strong>{targets.carbs} גרם</strong></p>
       </div>
+
     </div>
   );
 }
