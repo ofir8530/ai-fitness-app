@@ -7,23 +7,34 @@ interface SummaryProps {
     weight: string;
     height: string;
     goal: string;
+    targetWeight?: string; // הוספנו משקל יעד
+    diet?: string; // הוספנו את העדפות התזונה כמחרוזת
   };
 }
 
 export default function SummaryCard({ data }: SummaryProps) {
- const insightText = data.goal === 'lose' 
-    ? 'הצבת יעד מאתגר! כדי לרדת במשקל בצורה בריאה נתמקד ב...' 
-    : 'שמירה על הקיים דורשת איזון מדויק. התוכנית שלך תתמקד ב...';
-    
+  // לוגיקה קטנה להצגת הדיאטה בצורה יפה
+  const dietList = data.diet ? data.diet.split(',') : [];
+
   return (
     <div className={styles.card}>
       <h3>הניתוח שלנו עבורך:</h3>
       <p>גיל: <strong>{data.age}</strong></p>
-      <p>משקל: <strong>{data.weight} ק"ג</strong></p>
-      <p>גובה: <strong>{data.height} ס"מ</strong></p>
+      <p>משקל נוכחי: <strong>{data.weight} ק"ג</strong></p>
+      {data.targetWeight && <p>משקל יעד: <strong>{data.targetWeight} ק"ג</strong></p>}
       
+      {dietList.length > 0 && (
+        <div className={styles.dietTags}>
+          <p>העדפות תזונה:</p>
+          {dietList.map(item => (
+            <span key={item} className={styles.tag}>{item}</span>
+          ))}
+        </div>
+      )}
+
       <div className={styles.aiInsights}>
-        <p>{insightText}</p>
+        <h4>תובנות AI:</h4>
+        <p>מכיוון שבחרת ב-{data.goal === 'lose' ? 'ירידה במשקל' : 'מטרה אחרת'}, נתאים לך תפריט {data.diet?.includes('kosher') ? 'כשר' : ''}...</p>
       </div>
     </div>
   );

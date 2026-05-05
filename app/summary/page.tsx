@@ -6,13 +6,15 @@ import styles from '../page.module.css';
 
 export default function SummaryPage() {
   const searchParams = useSearchParams();
-  
+
   const userData = {
-    age: searchParams.get('age') || '', 
-    weight: searchParams.get('weight') || '',
-    height: searchParams.get('height') || '',
-    goal: searchParams.get('goal') || ''
-  };
+  age: searchParams.get('age') || '26',
+  weight: searchParams.get('weight') || '',
+  height: searchParams.get('height') || '',
+  goal: searchParams.get('goal') || '',
+  targetWeight: searchParams.get('targetWeight') || '',
+  diet: searchParams.get('diet') || '' 
+};
 
   return (
     <main className={styles.mainContainer}>
