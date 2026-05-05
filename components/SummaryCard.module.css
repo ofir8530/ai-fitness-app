@@ -1,0 +1,60 @@
+.card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+  width: 100%;
+  max-width: 450px;
+  margin: 20px auto;
+  direction: rtl; /* מבטיח שהכל מיושר לימין */
+}
+
+.card h3 {
+  color: #0f172a;
+  font-size: 1.4rem;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #3b82f6;
+  display: inline-block;
+  padding-bottom: 4px;
+}
+
+.card p {
+  margin: 12px 0;
+  color: #475569;
+  font-size: 1.1rem;
+}
+
+.card strong {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+/* החלק המיוחד לתובנות ה-AI */
+.aiInsights {
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #f0f9ff; /* כחול בהיר מאוד שמסמל טכנולוגיה/AI */
+  border-right: 4px solid #0ea5e9; /* פס כחול בצד ליצירת דגש */
+  border-radius: 8px;
+}
+
+.aiInsights h4 {
+  color: #0369a1;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* הוספת אייקון קטן של נצנצים/כוכבים לפני הכותרת (אופציונלי) */
+.aiInsights h4::before {
+  content: "✨";
+}
+
+.aiInsights p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #0c4a6e;
+  margin: 0;
+}

@@ -1,14 +1,18 @@
 "use client"; 
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from './UserForm.module.css';
 
 export default function UserForm() {
+  const router = useRouter(); 
+  
   const [formData, setFormData] = useState({
     age: '',
     weight: '',
-    height:'',
-    goal: 'maintain'
+    height: '',
+    goal: 'maintain',
+    targetWeight:'',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -18,9 +22,14 @@ export default function UserForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("נתונים שנשמרו:", formData);
-    alert("הנתונים נשמרו בהצלחה!");
-  };
+    
+    //  יצירת "מחרוזת חיפוש" עם הנתונים
+    const queryString = `age=${formData.age}&weight=${formData.weight}&height=${formData.height}&goal=${formData.goal}`;
+    
+    // מעבר לדף סיכום
+    router.push(`/summary?${queryString}`); 
+    };
+  
 
   return (
     <form className={styles.formContainer} onSubmit={handleSubmit}>
@@ -49,6 +58,20 @@ export default function UserForm() {
           <option value="gain">עלייה במסה</option>
         </select>
       </div>
+
+    {/* יוצג רק אם המטרה היא לא שמירה */}
+       {formData.goal !=='maintain'&&(
+            <div className={styles.formGroup}>
+                <label>משקל יעד (ק"ג):</label>
+                <input
+                type="number"
+                name="targetWeight"
+                value={formData.targetWeight}
+                onChange={handleChange}
+                required
+                />
+            </div>
+        )}
 
       <button type="submit" className={styles.submitButton}>שמור והמשך</button>
     </form>
