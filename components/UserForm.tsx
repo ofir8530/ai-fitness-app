@@ -23,11 +23,17 @@ export default function UserForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    //  יצירת "מחרוזת חיפוש" עם הנתונים
-    const queryString = `age=${formData.age}&weight=${formData.weight}&height=${formData.height}&goal=${formData.goal}`;
-    
-    // מעבר לדף סיכום
-    router.push(`/summary?${queryString}`); 
+    // בניית כתובת עם כל הנתונים שאספנו עד כה
+    const params = new URLSearchParams({
+        age: formData.age,
+        weight: formData.weight,
+        height: formData.height,
+        goal: formData.goal,
+        targetWeight: formData.targetWeight
+    });
+
+    // מעבר לדף העדפות התזונה במקום לדף הסיכום
+    router.push(`/dietary-preferences?${params.toString()}`);
     };
   
 
