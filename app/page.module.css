@@ -40,64 +40,16 @@
   background-color: #1d4ed8;
 }
 
-.buttonGroup {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.primaryButton {
-  background-color: #3b82f6;
-  color: white;
-  padding: 0.8rem 2rem;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
-
 .secondaryButton {
-  background-color: #10b981;
+  background-color: #9ea6b2;
   color: white;
-  padding: 0.8rem 2rem;
-  border-radius: 8px;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
   border: none;
   cursor: pointer;
-  font-weight: bold;
+  transition: background-color 0.2s;
 }
 
-.backButton {
-  margin-top: 1rem;
-  background: none;
-  border: none;
-  color: #666;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.optionsGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* שני טורים נוחים ללחיצה */
-  gap: 15px;
-  margin: 20px 0;
-  width: 100%;
-}
-
-.opt {
-  padding: 15px;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  background: white;
-  color: #475569; /* צבע אפור כהה לטקסט */
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.selectedOpt {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
-  color: #1d4ed8; /* כחול חזק לכפתור שנבחר */
-  font-weight: bold;
+.secondaryButton:hover {
+  background-color: #60646e;
 }
