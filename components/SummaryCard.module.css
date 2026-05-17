@@ -59,18 +59,27 @@
   margin: 0;
 }
 
+
 .dietTags {
-  margin: 15px 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;        
+  gap: 10px;                  
+  margin: 15px 0;
+}
+
+.tagsContainer {
+  display: flex;
+  gap: 8px;                   
+  flex-wrap: wrap;            
 }
 
 .tag {
-  background: #e0f2fe;
-  color: #0369a1;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  display: inline-block;
+  padding: 6px 14px;          
+  background-color: #e0f2fe;  
+  color: #0369a1;             
+  font-size: 14px;            
+  font-weight: 600;         
+  border-radius: 20px;        
+  white-space: nowrap;         
 }
