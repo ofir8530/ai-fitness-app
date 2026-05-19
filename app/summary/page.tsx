@@ -1,31 +1,43 @@
-"use client";
-import { useSearchParams } from 'next/navigation';
+import { createClientServer } from '../utils/supabaseServer';
+import { redirect } from 'next/navigation';
 import SummaryCard from '../../components/SummaryCard';
 import Link from 'next/link';
 import styles from '../page.module.css';
 
-export default function SummaryPage() {
-  const searchParams = useSearchParams();
-  console.log("Current URL Params:", searchParams.toString());
+export default async function SummaryPage() {
+  const supabase = await createClientServer();
 
-  // אנחנו שולחים מחרוזות כדי להתאים ל-Type של SummaryCard
+  // 1. מי המשתמש?
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  // 2. שליפת הנתונים מה-DB
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !profile) {
+    return <div>לא נמצאו נתונים, אולי כדאי למלא שאלון?</div>;
+  }
+
+  // 3. סידור הנתונים לפורמט שה-SummaryCard מצפה לו
   const userData = {
-    age: searchParams.get('age') || '26',
-    gender: searchParams.get('gender') || 'female',
-    weight: searchParams.get('weight') || '',
-    height: searchParams.get('height') || '',
-    goal: searchParams.get('goal') || '',
-    targetWeight: searchParams.get('targetWeight') || '',
-    activityLevel: Number(searchParams.get('activityLevel')) || 1.2,
-    diet: searchParams.get('diet') || ''
+    age: profile.age?.toString() || '',
+    gender: profile.gender || '',
+    weight: profile.weight?.toString() || '',
+    height: profile.height?.toString() || '',
+    goal: profile.goal || '',
+    targetWeight: profile.target_weight?.toString() || '',
+    activityLevel: profile.activity_level || 1.2,
+    diet: profile.dietary_preferences || ''
   };
-  console.log("Parsed userData:", userData);
 
   return (
     <main className={styles.mainContainer}>
       <h1 className={styles.title}>התוכנית שלך מוכנה!</h1>
       
-      {/* עכשיו ה-Types תואמים והשגיאה תיעלם */}
       <SummaryCard data={userData} />
 
       <Link href="/dashboard" className={styles.primaryButton}>

@@ -17,8 +17,9 @@ interface SummaryProps {
 
 export default function SummaryCard({ data }: SummaryProps) {
   // לוגיקה להצגת הדיאטה בצורה יפה ומניעת אינדקסים ריקים
-  const dietList = data.diet ? data.diet.split(',').filter(item => item.trim() !== '') : [];
-
+  const dietList = Array.isArray(data.diet) 
+    ? data.diet 
+    : (typeof data.diet === 'string' ? data.diet.split(',').filter(item => item.trim() !== '') : []);
   // המרת נתונים למספרים בצורה בטוחה כדי למנוע NaN או ערכים שליליים בחישוב
   const numWeight = Number(data.weight) || 0;
   const numHeight = Number(data.height) || 0;

@@ -9,7 +9,7 @@ export default function Home() {
       
       <div className={styles.buttonGroup}>
         {/* כפתור התחברות */}
-        <button className={styles.primaryButton}>התחברות</button>
+        <Link href="/login" className={styles.primaryButton}>התחברות</Link>
         
         {/* שימוש ב-Link למעבר דף אמיתי */}
         <Link href="/register" className={styles.secondaryButton}>
