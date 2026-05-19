@@ -1,54 +1,112 @@
 "use client"; 
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '../app/utils/supabase'; // ודאי שהנתיב ליוטילס תואם למבנה שלך
 import styles from './UserForm.module.css';
 
 export default function UserForm() {
   const [step, setStep] = useState(1);  
   const router = useRouter();
+  
+  // הוספת ה-States החסרים
+  const [userId, setUserId] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     age: '',
     gender: 'female',
     weight: '',
     height: '',
     goal: 'maintain',
-    targetWeight:'',
+    targetWeight: '',
     activityLevel: 1.2, 
     dietaryPreferences: [] as string[]
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  // שליפת המשתמש המחובר מ-Supabase ברגע שהדף עולה
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createClient();
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (user) {
+        setUserId(user.id);
+      } else {
+        console.error("No user found in session", error);
+        setError('משתמש לא מחובר. אנא בצע הרשמה או התחברות.');
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    if (!userId) {
+      setError('משתמש לא מזוהה. אנא הרשם מחדש.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log("Sending data to API for userId:", userId);
+      
+      const response = await fetch('/api/onboarding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          age: formData.age,
+          gender: formData.gender,
+          weight: formData.weight,
+          height: formData.height,
+          goal: formData.goal,
+          targetWeight: formData.goal === 'maintain' ? formData.weight : formData.targetWeight, // אם שומרים על המשקל, היעד הוא המשקל הנוכחי
+          activityLevel: formData.activityLevel,
+          dietaryPreferences: formData.dietaryPreferences,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'אירעה שגיאה בשמירת הנתונים בשרת');
+      }
+
+      // 2. רק אם השמירה בשרת הצליחה - עוברים לעמוד הסיכום
+      const params = new URLSearchParams({
+        age: formData.age.toString(),
+        gender: formData.gender,
+        weight: formData.weight.toString(),
+        height: formData.height.toString(),
+        goal: formData.goal,
+        targetWeight: formData.goal === 'maintain' ? formData.weight.toString() : formData.targetWeight.toString(),
+        activityLevel: formData.activityLevel.toString(),
+        diet: formData.dietaryPreferences.join(',')
+      });
+
+      router.push(`/summary?${params.toString()}`);
+
+    } catch (err: any) {
+      console.error("Client submit error:", err);
+      setError(err.message || 'שגיאה בתהליך השמירה. נסה שוב.');
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  // יצירת הפרמטרים מתוך ה-formData שקיים ב-State של הטופס
-  const params = new URLSearchParams({
-    age: formData.age.toString(),
-    gender: formData.gender,
-    weight: formData.weight.toString(),
-    height: formData.height.toString(),
-    goal: formData.goal,
-    targetWeight: formData.targetWeight.toString(),
-    activityLevel: formData.activityLevel.toString(),
-    diet: formData.dietaryPreferences.join(',')
-  });
-
-  // קריטי: להוסיף את סימן השאלה והפרמטרים לנתיב
-  const queryString = params.toString();
-  console.log("Navigating to:", `/summary?${queryString}`); // בדיקה ב-Console
-  
-  router.push(`/summary?${queryString}`);
-
-  };
-  
 
   return (
     <form onSubmit={handleSubmit} className={styles.formContainer}>
+      {/* הצגת שגיאות במידה ויש */}
+      {error && <div className={styles.errorAlert} style={{color: 'red', marginBottom: '15px'}}>{error}</div>}
+
       {step === 1 && (
         <div className={styles.formContainer}>
           <h2 className={styles.formTitle}>בוא נכיר אותך</h2>
@@ -108,7 +166,6 @@ export default function UserForm() {
             </select>
           </div>
 
-          {/* מציג את משקל היעד רק אם המטרה היא לא שמירה על המשקל */}
           {formData.goal !== 'maintain' && (
             <div className={styles.inputGroup}>
               <label className={styles.label}>משקל יעד (ק"ג)</label>
@@ -127,37 +184,37 @@ export default function UserForm() {
           </div>
         </div>
       )}
-       {/* שלב 2: רמת פעילות */}
-     {step === 2 && (
-      <div className={styles.formContainer}> {/* הקונטיינר הלבן שעוטף הכל */}
-        <h2 className={styles.formTitle}>איך נראה היום שלך?</h2>
-        <p className={styles.formDescription}>זה יעזור לנו לדייק את כמות הקלוריות שאת שורפת</p>
-        
-        <div className={styles.optionsGrid}>
-          {[
-            { val: 1.2, label: 'יושבני', desc: 'עבודה משרדית, מעט תנועה' },
-            { val: 1.375, label: 'פעילות קלה', desc: 'הליכות, עמידה, עבודה פיזית קלה' },
-            { val: 1.55, label: 'פעילות מתונה', desc: 'מתאמנת 3-5 פעמים בשבוע (פילאטיס וכו\')' },
-            { val: 1.725, label: 'פעילות גבוהה', desc: 'אימונים עצימים כמעט כל יום' }
-          ].map((opt) => (
-            <button
-              key={opt.val}
-              type="button"
-              className={formData.activityLevel === opt.val ? styles.selectedCard : styles.cardOption}
-              onClick={() => setFormData({...formData, activityLevel: opt.val})}
-            >
-              <span className={styles.cardTitle}>{opt.label}</span>
-              <span className={styles.cardDesc}>{opt.desc}</span>
-            </button>
-          ))}
-        </div>
 
-        <div className={styles.buttonGroup}>
-          <button type="button" onClick={() => setStep(1)} className={styles.secondaryButton}>חזור</button>
-          <button type="button" onClick={() => setStep(3)} className={styles.submitButton}>המשך</button>
+      {step === 2 && (
+        <div className={styles.formContainer}>
+          <h2 className={styles.formTitle}>איך נראה היום שלך?</h2>
+          <p className={styles.formDescription}>זה יעזור לנו לדייק את כמות הקלוריות שאת שורפת</p>
+          
+          <div className={styles.optionsGrid}>
+            {[
+              { val: 1.2, label: 'יושבני', desc: 'עבודה משרדית, מעט תנועה' },
+              { val: 1.375, label: 'פעילות קלה', desc: 'הליכות, עמידה, עבודה פיזית קלה' },
+              { val: 1.55, label: 'פעילות מתונה', desc: 'מתאמנת 3-5 פעמים בשבוע (פילאטיס וכו\')' },
+              { val: 1.725, label: 'פעילות גבוהה', desc: 'אימונים עצימים כמעט כל יום' }
+            ].map((opt) => (
+              <button
+                key={opt.val}
+                type="button"
+                className={formData.activityLevel === opt.val ? styles.selectedCard : styles.cardOption}
+                onClick={() => setFormData({...formData, activityLevel: opt.val})}
+              >
+                <span className={styles.cardTitle}>{opt.label}</span>
+                <span className={styles.cardDesc}>{opt.desc}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.buttonGroup}>
+            <button type="button" onClick={() => setStep(1)} className={styles.secondaryButton}>חזור</button>
+            <button type="button" onClick={() => setStep(3)} className={styles.submitButton}>המשך</button>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
       {step === 3 && (
         <div className={styles.formContainer}>
@@ -185,9 +242,9 @@ export default function UserForm() {
 
           <div className={styles.buttonGroup}>
             <button type="button" onClick={() => setStep(2)} className={styles.secondaryButton}>חזור</button>
-            <button type="submit" className={styles.submitButton}>
-      סיום והצגת סיכום
-    </button>
+            <button type="submit" disabled={isLoading} className={styles.submitButton}>
+              {isLoading ? 'שומר נתונים...' : 'סיום והצגת סיכום'}
+            </button>
           </div>
         </div>
       )}

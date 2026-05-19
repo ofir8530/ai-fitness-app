@@ -12,7 +12,7 @@ export default function Home() {
         <button className={styles.primaryButton}>התחברות</button>
         
         {/* שימוש ב-Link למעבר דף אמיתי */}
-        <Link href="/onboarding" className={styles.secondaryButton}>
+        <Link href="/register" className={styles.secondaryButton}>
           יצירת פרופיל
         </Link>
       </div>
