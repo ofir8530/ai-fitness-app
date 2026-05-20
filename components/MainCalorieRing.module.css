@@ -1,0 +1,49 @@
+.container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px auto;
+}
+
+.svg {
+    transform: rotate(-90deg);
+}
+
+.bgCircle {
+    fill: transparent;
+    stroke: #f0f4f8;
+}
+
+.progressCircle {
+    fill: transparent;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s ease-out;
+}
+
+.content {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.label {
+    font-size: 16px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.mainNumber {
+    font-size: 48px;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1;
+    margin: 5px 0;
+}
+
+.divider {
+    font-size: 14px;
+    color: #94a3b8;
+}

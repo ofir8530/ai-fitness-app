@@ -1,0 +1,5 @@
+.container { position: relative; display: flex; flex-direction: column; align-items: center; }
+.svg { transform: rotate(-90deg); }
+.bgCircle { fill: transparent; stroke: #f0f0f0; }
+.progressCircle { fill: transparent; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+.text { font-size: 14px; font-weight: bold; margin-top: 8px; color: #333; }
