@@ -1,7 +1,6 @@
 'use server'
 import { analyzeFood } from '../../lib/ai';
 
-// זו פונקציה שרצה בשרת בלבד
 export async function getFoodAnalysis(input: string) {
   try {
     return await analyzeFood(input);

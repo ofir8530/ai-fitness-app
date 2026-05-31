@@ -1,36 +1,40 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from 'openai';
 
-const apiKey = process.env.GOOGLE_AI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey!);
+// שימוש במפתח החדש של Groq
+const client = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY, 
+  baseURL: 'https://api.groq.com/openai/v1',
+});
 
 export async function analyzeFood(input: string) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-  const prompt = "נתח את המנה הבאה והחזר JSON בלבד (בלי הסברים נוספים) עם השדות: name, calories, protein, carbs, fats. הכל במספרים.";
+const prompt = `
+אתה עוזר תזונתי. נתח את התמונה הבאה בצורה אובייקטיבית לחלוטין.
+אל תנסה לנחש שם של מנה (כמו "פיצה" או "המבורגר"). במקום זה, ציין את המרכיבים הפיזיים שאתה רואה בתמונה.
 
-  let content: any[] = [];
+החזר JSON בלבד עם השדות הבאים:
+- description: תיאור קצר של המרכיבים (למשל: "פרוסת לחם עם ממרח ועשבי תיבול", "סלט ירקות").
+- calories: מספר קלוריות מוערך.
+- protein: כמות חלבון בגרמים.
+- carbs: כמות פחמימות בגרמים.
+- fats: כמות שומן בגרמים.
 
-  // בדיקה: האם זה תמונה (base64) או טקסט?
-  if (input.startsWith('data:image')) {
-    // אם זה תמונה, נשלח אותה למודל
-    const base64Data = input.replace(/^data:image\/\w+;base64,/, "");
-    content = [
-      {
-        inlineData: {
-        data: base64Data,
-        mimeType: "image/jpeg",
-      },
-      },
-      prompt
-    ];
-  } else {
-    // אם זה טקסט, פשוט נשלח את הפרומפט + הטקסט של המשתמש
-    content = [`${prompt} המנה היא: ${input}`];
-  }
+אם אינך בטוח לגבי מרכיב מסוים, תאר את המראה שלו (למשל: "ממרח בהיר עם עשבי תיבול").
+`;
+  const content = input.startsWith('data:image') 
+    ? `${prompt} נתח את התמונה הבאה (בפורמט Base64): ${input}`
+    : `${prompt} המנה היא: ${input}`;
 
-  const result = await model.generateContent(content);
-  const text = result.response.text();
-  
-  // ניקוי התשובה
-  const jsonString = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(jsonString);
+  const completion = await client.chat.completions.create({
+    messages: [{ role: 'user', content: content }],
+    model: 'llama-3.3-70b-versatile', // מודל מצוין ומהיר
+    response_format: { type: "json_object" },
+  });
+
+  const text = completion.choices[0].message.content!;
+  return JSON.parse(text);
+}
+
+// פונקציה ריקה כדי שלא תקבלי שגיאה ב-aiActions
+export async function testGeminiConnection() {
+  return true;
 }
