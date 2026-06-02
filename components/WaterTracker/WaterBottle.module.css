@@ -1,0 +1,157 @@
+.card {
+  width: 380px;
+  margin: auto;
+  padding: 24px;
+
+  background: rgb(255, 255, 255);
+  border-radius: 28px;
+
+  text-align: center;
+
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}
+
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  color: #3b7f93;
+}
+
+/* BOTTLE */
+.bottle {
+  width: 150px;
+  height: 340px;
+
+  margin: auto;
+
+  border: 4px solid #d4e2e8;
+  border-radius: 36px;
+
+  overflow: hidden;
+
+  position: relative;
+}
+
+/* WATER */
+.water {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+
+  background: linear-gradient(
+    180deg,
+    #6fd3ee,
+    #2f8aa6
+  );
+
+  transition: height 0.8s cubic-bezier(0.22,1,0.36,1);
+
+  overflow: visible;
+}
+
+
+/* SLASH EFFECT */
+.slosh {
+  animation: slosh 0.9s ease;
+}
+
+@keyframes slosh {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+  75% { transform: rotate(-2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* WAVES */
+.wave {
+  position: absolute;
+  top: -60px; 
+  left: 0;
+  filter: blur(0.3px);
+  opacity: 0.9;
+  width: 200%;
+  height: 60.5px;
+  z-index: 2;
+}
+
+.waveBack {
+  fill: #84c3d650;
+  animation: move 12s linear infinite;
+}
+
+.waveFront {
+  fill: #6bcfea7e;
+  animation: moveReverse 8s linear infinite;
+}
+
+@keyframes move {
+  from { transform: translateX(0); }
+  to { transform: translateX(-300px); }
+}
+
+@keyframes moveReverse {
+  from { transform: translateX(0px); }
+  to { transform: translateX(-300px); }
+}
+
+/* BUBBLES */
+.bubble {
+  position: absolute;
+  bottom: -20px;
+
+  background: rgba(255,255,255,0.5);
+
+  border-radius: 50%;
+
+  animation: bubble linear forwards;
+}
+
+@keyframes bubble {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-280px); opacity: 0; }
+}
+
+/* ACTIONS */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.plus, .minus {
+  width: 65px;
+  height: 65px;
+  font-size: 30px;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.plus {
+  background: #3f8ea6;
+  color: white;
+  border: none;
+}
+
+.minus {
+  background: white;
+  border: 2px solid #3f8ea6;
+  color: #3f8ea6;
+}
+
+/* MESSAGE */
+.message {
+  margin-top: 16px;
+  padding: 12px;
+
+  background: #e7fff2;
+  color: #1c8f5a;
+
+  border-radius: 12px;
+
+  font-weight: bold;
+}

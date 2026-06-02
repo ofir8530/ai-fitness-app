@@ -35,8 +35,8 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
 
-      <body className="min-h-full flex flex-col">
-        <ModalProvider>
+      <body className="min-h-full flex flex-col pb-20">
+          <ModalProvider>
           
           <main className="flex-grow">
             {children}

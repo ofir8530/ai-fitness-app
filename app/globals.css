@@ -30,6 +30,7 @@ body {
   background-color: var(--bg-color);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
+  padding-bottom: env(safe-area-inset-bottom, 80px);
 }
 
 /* סגנון כללי לכל הכפתורים באפליקציה */

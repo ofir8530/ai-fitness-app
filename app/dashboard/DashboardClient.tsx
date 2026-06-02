@@ -4,6 +4,7 @@ import AddFoodModal from '../../components/AddFoodModal';
 import ProgressRing from '../../components/ProgressRing';
 import MainCalorieRing from '../../components/MainCalorieRing';
 import styles from './dashboard.module.css';
+import WaterBottle from '../../components/WaterTracker/WaterBottle';
 
 export default function DashboardClient({ nutrition }: { nutrition: any }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,7 +33,7 @@ export default function DashboardClient({ nutrition }: { nutrition: any }) {
           <h3 className={styles.macroTitle}>שומן</h3>
         </div>
       </section>
-
+      <WaterBottle /> 
       {isModalOpen && <AddFoodModal onClose={() => setIsModalOpen(false)} />}
     </main>
   );
