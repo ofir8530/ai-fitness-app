@@ -60,3 +60,22 @@
     font-weight: 700;
     color: #0f172a;
 }
+
+.addFoodButton {
+  margin-top: 20px;
+  width: 100%;
+  padding: 18px;
+  background-color: #0f172a; /* כחול כהה/שחור פרימיום */
+  color: white;
+  border-radius: var(--radius-md, 16px);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.addFoodButton:active {
+  transform: scale(0.98);
+}
+

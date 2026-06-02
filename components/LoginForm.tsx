@@ -31,7 +31,7 @@ export default function LoginForm() {
       }
 
       setTimeout(() => {
-        router.push('/summary');
+        router.push('/dashboard');
       }, 500);
 
     } catch (err: any) {

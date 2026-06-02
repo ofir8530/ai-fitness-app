@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import BottomNav from '@/components/BottomNav'; 
+import { ModalProvider } from '@/components/ModalContext';
+import ModalWrapper from '@/components/ModalWrapper';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,10 +27,26 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="he" 
+      dir="rtl" 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+      </head>
+
+      <body className="min-h-full flex flex-col">
+        <ModalProvider>
+          
+          <main className="flex-grow">
+            {children}
+          </main>
+
+          <BottomNav />
+          <ModalWrapper />
+          
+        </ModalProvider>
+      </body>
     </html>
   );
 }

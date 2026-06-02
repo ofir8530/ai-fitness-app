@@ -8,7 +8,7 @@ export default function AddFoodModal({ onClose }: { onClose: () => void }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [foodData, setFoodData] = useState<any>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null); // הוספנו מצב לתמונה
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,7 +18,7 @@ export default function AddFoodModal({ onClose }: { onClose: () => void }) {
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64Image = reader.result as string;
-        setImagePreview(base64Image); // שמירת התמונה לתצוגה
+        setImagePreview(base64Image);
         const result = await getFoodAnalysis(base64Image);
         setFoodData(result);
         setLoading(false);
@@ -27,16 +27,38 @@ export default function AddFoodModal({ onClose }: { onClose: () => void }) {
     }
   };
 
+  const handleTextAnalysis = async () => {
+    if (!input) return;
+    setLoading(true);
+    const result = await getFoodAnalysis(input);
+    setFoodData(result);
+    setLoading(false);
+  };
+
   return (
     <div className={styles.overlay}>
       <form action={addFoodLog} className={styles.modal}>
         <h2>הוספת ארוחה</h2>
         
         {!foodData ? (
+          // כאן התיקון: תנאי אחד בלבד
           <>
-            <textarea placeholder="תאר את המנה..." className={styles.input} onChange={(e) => setInput(e.target.value)} />
+            <textarea 
+              placeholder="תאר את המנה (למשל: פסטה עם רוטב עגבניות...)" 
+              className={styles.input} 
+              onChange={(e) => setInput(e.target.value)} 
+            />
+            
+            <button type="button" onClick={handleTextAnalysis} className={styles.submitButton}>
+              {loading ? 'מנתח...' : 'נתח טקסט'}
+            </button>
+
+            <div style={{ margin: '10px 0', textAlign: 'center' }}>או</div>
+
             <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} accept="image/*" />
-            <button type="button" onClick={() => fileInputRef.current?.click()} className={styles.submitButton}>העלה תמונה</button>
+            <button type="button" onClick={() => fileInputRef.current?.click()} className={styles.submitButton}>
+              העלה תמונה
+            </button>
           </>
         ) : (
           <div className={styles.editSection}>
@@ -45,13 +67,14 @@ export default function AddFoodModal({ onClose }: { onClose: () => void }) {
             <div className={styles.fieldWrapper}>
               <label>תיאור המנה:</label>
               <textarea 
-                name="food_name" // אפשר להשאיר את השם הזה כדי שיתאים למה שכתוב ב-foodActions
-                defaultValue={foodData.description} // שימי לב שאנחנו לוקחים את ה-description מה-AI
+                name="food_name" 
+                defaultValue={foodData.description} 
                 className={styles.input} 
-                rows={3} // גובה התאבה יגדל כדי להכיל תיאור
+                rows={3} 
               />
             </div>
             
+            {/* שאר השדות נשארים אותו דבר */}
             <div className={styles.fieldWrapper}>
               <label>קלוריות:</label>
               <input name="calories" type="number" defaultValue={foodData.calories} className={styles.input} />

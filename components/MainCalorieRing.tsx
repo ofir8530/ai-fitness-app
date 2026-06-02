@@ -7,7 +7,7 @@ interface Props {
 
 export default function MainCalorieRing({ consumed, target }: Props) {
   const progress = Math.min((consumed / target) * 100, 100);
-  const size = 220; // גדולה יותר
+  const size = typeof window !== 'undefined' && window.innerWidth < 400 ? 180 : 220;
   const stroke = 15; // עבה יותר
   const radius = (size - stroke) / 2;
   const circumference = radius * 2 * Math.PI;

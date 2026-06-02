@@ -1,26 +1,56 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* צבעים - פלטה שקטה ונקייה */
+  --bg-color: #f8f9fb;
+  --card-bg: #ffffff;
+  --text-primary: #1a1c21;
+  --text-secondary: #71717a;
+  --accent-color: #007aff; /* כחול "אייפוני" יפה */
+  --border-color: #e4e4e7;
+  
+  /* מידות גלובליות */
+  --radius-xs: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  
+  /* צלליות (נותן עומק) */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  color: #1e293b; 
-  background-color: #ffffff;
-  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif; /* גופן מודרני */
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* סגנון כללי לכל הכפתורים באפליקציה */
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: opacity 0.2s;
+}
+
+button:active {
+  opacity: 0.8;
+}
+
+/* כותרות ראשיות באפליקציה */
+h1, h2, h3 {
+  margin: 0;
+  font-weight: 700;
+}
+
+html, body {
+  overflow-x: hidden; /* מונע גלילה לצדדים בטעות */
+  width: 100%;
 }

@@ -33,10 +33,6 @@ export default function DashboardClient({ nutrition }: { nutrition: any }) {
         </div>
       </section>
 
-      <button onClick={() => setIsModalOpen(true)} className={styles.addFoodButton}>
-        + הוסף ארוחה
-      </button>
-
       {isModalOpen && <AddFoodModal onClose={() => setIsModalOpen(false)} />}
     </main>
   );

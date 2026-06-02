@@ -1,40 +1,35 @@
-import OpenAI from 'openai';
+'use server'
+import OpenAI from "openai";
 
-// שימוש במפתח החדש של Groq
-const client = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY, 
-  baseURL: 'https://api.groq.com/openai/v1',
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function analyzeFood(input: string) {
-const prompt = `
-אתה עוזר תזונתי. נתח את התמונה הבאה בצורה אובייקטיבית לחלוטין.
-אל תנסה לנחש שם של מנה (כמו "פיצה" או "המבורגר"). במקום זה, ציין את המרכיבים הפיזיים שאתה רואה בתמונה.
+  const isImage = input.startsWith('data:image');
 
-החזר JSON בלבד עם השדות הבאים:
-- description: תיאור קצר של המרכיבים (למשל: "פרוסת לחם עם ממרח ועשבי תיבול", "סלט ירקות").
-- calories: מספר קלוריות מוערך.
-- protein: כמות חלבון בגרמים.
-- carbs: כמות פחמימות בגרמים.
-- fats: כמות שומן בגרמים.
+  const messages: any = [{
+    role: 'user',
+    content: [
+      { type: "text", text: `נתחי את הקלט הבא ותחזירי JSON בלבד (ללא טקסט נוסף) עם השדות: description, calories, protein, carbs, fats. הקלט: ${isImage ? "[התמונה מצורפת]" : input}` },
+    ]
+  }];
 
-אם אינך בטוח לגבי מרכיב מסוים, תאר את המראה שלו (למשל: "ממרח בהיר עם עשבי תיבול").
-`;
-  const content = input.startsWith('data:image') 
-    ? `${prompt} נתח את התמונה הבאה (בפורמט Base64): ${input}`
-    : `${prompt} המנה היא: ${input}`;
+  if (isImage) {
+    messages[0].content.push({ type: "image_url", image_url: { url: input } });
+  }
 
-  const completion = await client.chat.completions.create({
-    messages: [{ role: 'user', content: content }],
-    model: 'llama-3.3-70b-versatile', // מודל מצוין ומהיר
-    response_format: { type: "json_object" },
-  });
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: messages,
+      response_format: { type: "json_object" },
+    });
 
-  const text = completion.choices[0].message.content!;
-  return JSON.parse(text);
-}
-
-// פונקציה ריקה כדי שלא תקבלי שגיאה ב-aiActions
-export async function testGeminiConnection() {
-  return true;
+    const text = completion.choices[0].message.content!;
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("AI Error:", error);
+    return null;
+  }
 }

@@ -1,0 +1,45 @@
+.navbar {
+  position: fixed;
+  bottom: 20px; /* המרחק מהתחתית נותן לו תחושת ריחוף */
+  left: 20px;
+  right: 20px;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.9); /* שקיפות עדינה */
+  backdrop-filter: blur(10px); /* טשטוש רקע (ה-Look של iOS) */
+  border-radius: 35px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  padding: 0 10px;
+}
+
+.navItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #71717a;
+  font-size: 10px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.navItem.active {
+  color: #0070f3; /* צבע הדגש */
+}
+
+/* כפתור הוספת ארוחה המרכזי שצריך להיות בולט */
+.addButton {
+  background: #0070f3;
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  box-shadow: 0 4px 10px rgba(0, 112, 243, 0.3);
+}
