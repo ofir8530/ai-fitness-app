@@ -54,6 +54,7 @@ h1, h2, h3 {
 html, body {
   overflow-x: hidden; /* מונע גלילה לצדדים בטעות */
   width: 100%;
+    padding-bottom: 50px;
 }
 
 /* ניקוי כללי לכל שדות המספרים באפליקציה */

@@ -25,21 +25,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // app/layout.tsx
   return (
-    <html
-      lang="he" 
-      dir="rtl" 
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-      </head>
-
-      <body className="min-h-full flex flex-col pb-20">
-          <ModalProvider>
-          
-          <main className="flex-grow">
+    <html lang="he" dir="rtl" className="h-full">
+      <body className="h-full flex flex-col relative">
+        <ModalProvider>
+          {/* הוספנו h-full ו-overflow-y-auto כדי שהגלילה תהיה פנימית */}
+          <main className="flex-grow overflow-y-auto">
             {children}
+            
+            {/* ה-SPACER: האלמנט הזה "יחזיק" את המקום של ה-Navbar */}
+            {/* גובה הבר שלך הוא 70px + 20px מרווח = 90px */}
+            <div className="h-[100px] w-full flex-shrink-0"></div>
           </main>
 
           <ConditionalBottomNav />
