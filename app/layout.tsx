@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import BottomNav from '@/components/BottomNav'; 
 import { ModalProvider } from '@/components/ModalContext';
 import ModalWrapper from '@/components/ModalWrapper';
+import ConditionalBottomNav from '@/components/ConditionalBottomNav'; // ייבוא הקומפוננטה החדשה
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,9 +42,8 @@ export default function RootLayout({
             {children}
           </main>
 
-          <BottomNav />
-          <ModalWrapper />
-          
+          <ConditionalBottomNav />
+          <ModalWrapper /> 
         </ModalProvider>
       </body>
     </html>
