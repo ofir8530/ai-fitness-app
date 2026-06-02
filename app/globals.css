@@ -54,3 +54,14 @@ html, body {
   overflow-x: hidden; /* מונע גלילה לצדדים בטעות */
   width: 100%;
 }
+
+/* ניקוי כללי לכל שדות המספרים באפליקציה */
+input[type='number'] {
+    -moz-appearance: textfield !important;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
