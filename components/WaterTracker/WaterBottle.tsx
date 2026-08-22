@@ -1,146 +1,150 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Confetti from "react-confetti";
-import { animate } from "framer-motion";
-import styles from "./WaterBottle.module.css";
+import { useEffect, useState } from 'react';
+import Confetti from 'react-confetti';
+import MaterialIcon from '../MaterialIcon';
+import { useProgress } from '../ProgressContext';
 
-const DAILY_GOAL = 2000;
-const STEP = 250;
+const DAILY_GOAL_ML = 2500;
+const STEP_ML = 250;
 
 type Bubble = {
   id: number;
   left: number;
   size: number;
+  delay: number;
   duration: number;
 };
 
 export default function WaterBottle() {
-  const [water, setWater] = useState(750);
-  const [displayWater, setDisplayWater] = useState(750);
-  const [sloshing, setSloshing] = useState(false);
+  const { data, updateData } = useProgress();
   const [goalReached, setGoalReached] = useState(false);
+  const [scaleClass, setScaleClass] = useState('');
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
 
-  const percentage = Math.min((water / DAILY_GOAL) * 100, 100);
+  const liters = data.water / 1000;
+  const maxLiters = DAILY_GOAL_ML / 1000;
+  const percentage = Math.min((data.water / DAILY_GOAL_ML) * 100, 100);
 
-  const triggerSlosh = () => {
-    setSloshing(true);
-    setTimeout(() => setSloshing(false), 900);
+  const createBubbles = (hasWater: boolean) => {
+    if (!hasWater) {
+      setBubbles([]);
+      return;
+    }
+    setBubbles(
+      Array.from({ length: 5 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        size: Math.random() * 6 + 2,
+        delay: Math.random() * 4,
+        duration: 3 + Math.random() * 2,
+      }))
+    );
   };
 
-  const addWater = () => {
-    triggerSlosh();
-    setWater((prev) => Math.min(prev + STEP, DAILY_GOAL));
-  };
-
-  const removeWater = () => {
-    triggerSlosh();
-    setWater((prev) => Math.max(prev - STEP, 0));
-  };
-
-  /* Counter animation */
   useEffect(() => {
-    const controls = animate(displayWater, water, {
-      duration: 0.5,
-      onUpdate(value) {
-        setDisplayWater(Math.round(value));
-      },
-    });
+    createBubbles(data.water > 0);
+  }, [data.water]);
 
-    return () => controls.stop();
-  }, [water]);
-
-  /* Goal reached */
   useEffect(() => {
-    if (water >= DAILY_GOAL) {
+    if (data.water >= DAILY_GOAL_ML && !goalReached) {
       setGoalReached(true);
       const t = setTimeout(() => setGoalReached(false), 4000);
       return () => clearTimeout(t);
     }
-  }, [water]);
+  }, [data.water, goalReached]);
 
-  /* Random bubbles */
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const bubble: Bubble = {
-        id: Date.now() + Math.random(),
-        left: Math.random() * 90,
-        size: 6 + Math.random() * 14,
-        duration: 3 + Math.random() * 4,
-      };
+  const bounce = (cls: string) => {
+    setScaleClass(cls);
+    setTimeout(() => setScaleClass(''), 200);
+  };
 
-      setBubbles((prev) => [...prev, bubble]);
+  const addWater = () => {
+    if (data.water < DAILY_GOAL_ML) {
+      updateData('water', STEP_ML);
+      bounce('scale-105');
+    }
+  };
 
-      setTimeout(() => {
-        setBubbles((prev) =>
-          prev.filter((b) => b.id !== bubble.id)
-        );
-      }, bubble.duration * 1000);
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, []);
+  const removeWater = () => {
+    if (data.water > 0) {
+      updateData('water', -STEP_ML);
+      bounce('scale-95');
+    }
+  };
 
   return (
-    <div className={styles.card}>
+    <div className="col-span-2 bg-surface-container-lowest rounded-xl p-gutter shadow-sm flex flex-col gap-6 items-center">
+      {goalReached && <Confetti numberOfPieces={180} recycle={false} />}
 
-      {goalReached && (
-        <Confetti numberOfPieces={200} recycle={false} />
-      )}
-
-      <div className={styles.header}>
-        <h3>מים</h3>
-        <span>
-          {displayWater} / {DAILY_GOAL} מ"ל
+      <div className="flex justify-between items-center w-full">
+        <div className="flex items-center gap-2">
+          <MaterialIcon
+            name="water_drop"
+            filled
+            className="text-primary-container"
+          />
+          <span className="font-headline text-headline-sm font-semibold text-on-surface">
+            שתיית מים
+          </span>
+        </div>
+        <span className="font-headline text-headline-sm font-semibold text-primary">
+          {liters.toFixed(2)} / {maxLiters} ליטר
         </span>
       </div>
 
-      {/* BOTTLE */}
-     {/* BOTTLE */}
-<div className={styles.bottle}>
-  <div
-    className={styles.water}
-    style={{ height: `${percentage}%` }}
-  >
-    {/* הגלים בתוך המים - הם יזוזו איתם טבעית */}
-    <svg
-      className={styles.wave}
-      viewBox="0 0 1200 120"
-      preserveAspectRatio="none"
-    >
-      <path className={styles.waveBack} d="M0,40 C200,0 400,80 600,40 C800,0 1000,80 1200,40 L1200,120 L0,120 Z" />
-      <path className={styles.waveFront} d="M0,50 C200,100 400,0 600,50 C800,100 1000,0 1200,50 L1200,120 L0,120 Z" />
-    </svg>
+      <div className="relative flex flex-col items-center gap-4 py-4 w-full">
+        <button
+          type="button"
+          onClick={addWater}
+          className={`relative cursor-pointer select-none active:scale-95 transition-transform duration-200 bg-transparent p-0 ${scaleClass}`}
+          aria-label="הוסף מים"
+        >
+          <div className="h-5 bg-primary/90 rounded-t-lg mx-auto -mb-0.5 relative z-20 w-8 border-x-2 border-t-2 border-primary" />
+          <div className="h-3 bg-primary/20 mx-auto w-6 border-x-2 border-primary/40" />
+          <div className="wave-container shadow-inner">
+            <div className="water-wave" style={{ height: `${percentage}%` }}>
+              {bubbles.map((b) => (
+                <div
+                  key={b.id}
+                  className="bubble"
+                  style={{
+                    width: b.size,
+                    height: b.size,
+                    left: `${b.left}%`,
+                    animationDelay: `${b.delay}s`,
+                    animationDuration: `${b.duration}s`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </button>
 
-    {/* הבועות בתוך המים - הן ייראו רק בתוך השטח הכחול */}
-    {bubbles.map((b) => (
-      <span
-        key={b.id}
-        className={styles.bubble}
-        style={{
-          left: `${b.left}%`,
-          width: b.size,
-          height: b.size,
-          animationDuration: `${b.duration}s`,
-        }}
-      />
-    ))}
-  </div>
-</div>
-      <div className={styles.goal}>
-        יעד יומי: 2 ליטר
-      </div>
-
-      <div className={styles.actions}>
-        <button className={styles.plus} onClick={addWater}>+</button>
-        <button className={styles.minus} onClick={removeWater}>−</button>
+        <div className="flex items-center gap-6">
+          <button
+            type="button"
+            onClick={removeWater}
+            className="w-14 h-14 rounded-full bg-surface-container-high text-on-surface shadow-sm flex items-center justify-center active:scale-90 transition-transform"
+            aria-label="הסר מים"
+          >
+            <MaterialIcon name="remove" className="text-2xl" />
+          </button>
+          <button
+            type="button"
+            onClick={addWater}
+            className="w-14 h-14 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center active:scale-90 transition-transform"
+            aria-label="הוסף מים"
+          >
+            <MaterialIcon name="add" className="text-2xl" />
+          </button>
+        </div>
       </div>
 
       {goalReached && (
-        <div className={styles.message}>
-          🎉 יי! הגעת ליעד היומי
-        </div>
+        <p className="font-label-md text-primary text-sm font-semibold">
+          הגעת ליעד היומי!
+        </p>
       )}
     </div>
   );

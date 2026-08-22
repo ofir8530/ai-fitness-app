@@ -1,69 +1,233 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
 
-:root {
-  /* צבעים - פלטה שקטה ונקייה */
-  --bg-color: #f8f9fb;
-  --card-bg: #ffffff;
-  --text-primary: #1a1c21;
-  --text-secondary: #71717a;
-  --accent-color: #007aff; /* כחול "אייפוני" יפה */
-  --border-color: #e4e4e7;
-  
-  /* מידות גלובליות */
-  --radius-xs: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  
-  /* צלליות (נותן עומק) */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+@theme {
+  --color-secondary-fixed-dim: #fbb79b;
+  --color-tertiary: #605e58;
+  --color-on-error: #ffffff;
+  --color-inverse-primary: #b0ceb2;
+  --color-surface-container: #efeded;
+  --color-primary: #4a654e;
+  --color-on-primary: #ffffff;
+  --color-on-error-container: #93000a;
+  --color-tertiary-container: #a3a199;
+  --color-primary-fixed: #cceace;
+  --color-on-primary-fixed: #07200f;
+  --color-surface-variant: #e4e2e2;
+  --color-surface-container-low: #f5f3f3;
+  --color-on-tertiary-fixed: #1c1c17;
+  --color-surface: #fbf9f8;
+  --color-on-surface-variant: #424842;
+  --color-on-secondary-fixed: #341102;
+  --color-surface-container-highest: #e4e2e2;
+  --color-outline: #737972;
+  --color-tertiary-fixed-dim: #c9c6be;
+  --color-on-primary-fixed-variant: #334d38;
+  --color-error-container: #ffdad6;
+  --color-background: #fbf9f8;
+  --color-on-secondary: #ffffff;
+  --color-surface-tint: #4a654e;
+  --color-primary-fixed-dim: #b0ceb2;
+  --color-on-surface: #1b1c1c;
+  --color-surface-bright: #fbf9f8;
+  --color-inverse-surface: #303030;
+  --color-error: #ba1a1a;
+  --color-surface-container-lowest: #ffffff;
+  --color-secondary-container: #feba9d;
+  --color-on-secondary-fixed-variant: #693b25;
+  --color-surface-container-high: #eae8e7;
+  --color-outline-variant: #c2c8c0;
+  --color-on-secondary-container: #794832;
+  --color-inverse-on-surface: #f2f0f0;
+  --color-tertiary-fixed: #e6e2d9;
+  --color-primary-container: #8ba88e;
+  --color-surface-dim: #dbd9d9;
+  --color-on-tertiary-container: #393832;
+  --color-on-tertiary-fixed-variant: #484741;
+  --color-on-tertiary: #ffffff;
+  --color-secondary: #85513b;
+  --color-secondary-fixed: #ffdbcd;
+  --color-on-primary-container: #233d29;
+  --color-on-background: #1b1c1c;
+
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-full: 9999px;
+
+  --spacing-gutter: 16px;
+  --spacing-container-margin: 24px;
+  --spacing-section-padding: 32px;
+  --spacing-base: 8px;
+
+  --font-headline: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
+  --font-body: var(--font-manrope), Manrope, sans-serif;
+
+  --text-headline-lg-mobile: 28px;
+  --text-headline-lg-mobile--line-height: 36px;
+  --text-headline-lg-mobile--font-weight: 700;
+  --text-headline-sm: 20px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--font-weight: 600;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 600;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--font-weight: 500;
+  --text-label-md: 14px;
+  --text-label-md--line-height: 20px;
+  --text-label-md--letter-spacing: 0.01em;
+  --text-label-md--font-weight: 600;
 }
 
-* {
-  box-sizing: border-box;
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-body);
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100dvh;
+  }
+
+  button {
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+  }
+
+  h1,
+  h2,
+  h3 {
+    margin: 0;
+    font-family: var(--font-headline);
+  }
+
+  input[type="number"] {
+    appearance: none;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    user-select: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', sans-serif; /* גופן מודרני */
-  background-color: var(--bg-color);
-  color: var(--text-primary);
-  -webkit-font-smoothing: antialiased;
-  padding-bottom: env(safe-area-inset-bottom, 80px);
+/* Water bottle wave animation */
+.wave-container {
+  position: relative;
+  width: 120px;
+  height: 200px;
+  background: rgba(240, 240, 240, 0.4);
+  border: 3px solid #4a654e;
+  border-radius: 20px 20px 12px 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  backdrop-filter: blur(2px);
 }
 
-/* סגנון כללי לכל הכפתורים באפליקציה */
-button {
-  cursor: pointer;
-  border: none;
-  font-family: inherit;
-  transition: opacity 0.2s;
-}
-
-button:active {
-  opacity: 0.8;
-}
-
-/* כותרות ראשיות באפליקציה */
-h1, h2, h3 {
-  margin: 0;
-  font-weight: 700;
-}
-
-html, body {
-  overflow-x: hidden; /* מונע גלילה לצדדים בטעות */
+.water-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   width: 100%;
-    padding-bottom: 50px;
+  background: linear-gradient(
+    180deg,
+    rgba(139, 168, 142, 0.6) 0%,
+    rgba(74, 101, 78, 0.8) 100%
+  );
+  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ניקוי כללי לכל שדות המספרים באפליקציה */
-input[type='number'] {
-    -moz-appearance: textfield !important;
+.water-wave::before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: 0;
+  width: 200%;
+  height: 30px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 88.7'%3E%3Cpath d='M800 56.9c-155.5 0-204.9-50-405.5-49.9-200 0-250 49.9-394.5 49.9v31.8h800v-31.8z' fill='rgba(139, 168, 142, 0.6)'/%3E%3C/svg%3E");
+  background-size: 50% 100%;
+  animation: wave-animation 3s linear infinite;
 }
 
-input[type='number']::-webkit-outer-spin-button,
-input[type='number']::-webkit-inner-spin-button {
-    -webkit-appearance: none !important;
-    margin: 0 !important;
+@keyframes wave-animation {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.bubble {
+  position: absolute;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: rise 4s infinite ease-in;
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.6;
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-160px) scale(0.5);
+    opacity: 0;
+  }
 }

@@ -1,0 +1,7 @@
+export const LOGO_URL =
+  "https://lh3.googleusercontent.com/aida/AP1WRLuvc5m3n_JwCIa5hPzG7gIVhVpawidOlMwqPMa7ZRI0BVlzUvuBdX8wfDNeHJzmhEED-7C45IsVCP-FtL4LynZmkLGvdl-30kbGxG6hQCH6uS7JItJQ1PbpXGfNF-_IOujron8u_TpkBkq2eZVYa8ZK1TW6lwYK3eLz-e9cna3SRB1KPY52xXaFgHVTo7N6qaRENd_TvdOHyrRERdYRC2ucMAb3-HTSVwjFbCYeQZ1INnjRjRxWgjGFjRs";
+
+export const PROFILE_AVATAR_URL =
+  "https://lh3.googleusercontent.com/aida/AP1WRLsUdJx9u-BOAbT5t1zCtGwr3riJLAcWUFR10ZHjxvUszKo2F4H4Sm8J5HhFJ1r_izLe4i_HCJBdv3cSF5ornBfKKxUangNBmn_qEVC20WTcC4u5_IX0A2-L8DPL-OOTH_esMDKwwbyG3Chgx7xCTQXYu2L9H2BlPGFx4wyI_IHfOgO9fs7tDSflaPM6cevFYuhgtxgwnkvkGuwUK95SlkBUY2jVtEXpKiYI8p9LcAkr7WLqwh1NY5ms5Fk";
+
+export const USER_DISPLAY_NAME = "מיה";
