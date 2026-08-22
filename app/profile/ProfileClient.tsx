@@ -48,18 +48,47 @@ export default function ProfileClient({ profile }: { profile: ProfileView }) {
   const router = useRouter();
   const [chartMode, setChartMode] = useState<'daily' | 'weekly'>('daily');
   const [loggingOut, setLoggingOut] = useState(false);
+  const [progressInput, setProgressInput] = useState<string>(profile.weight ? String(profile.weight) : '');
+  const [isSavingProgress, setIsSavingProgress] = useState(false);
 
   const weight = profile.weight ?? 0;
   const target = profile.targetWeight ?? weight;
-  const startGuess =
-    profile.goal === 'gain'
-      ? Math.min(weight, target) - Math.abs(target - weight) * 0.2
-      : Math.max(weight, target) + Math.abs(weight - target) * 0.25;
 
-  const totalDelta = Math.abs(startGuess - target) || 1;
-  const doneDelta = Math.abs(startGuess - weight);
-  const progressPct = Math.min(100, Math.round((doneDelta / totalDelta) * 100));
+  const hasProgressData = Boolean(profile.weight && profile.targetWeight)
+    || Boolean(profile.weight && profile.goal);
+
+  let progressPct = 0;
+  if (hasProgressData && target > 0 && weight > 0 && weight !== target) {
+    const delta = Math.abs(target - weight);
+    const safeTargetGap = Math.max(1, Math.abs(target - (profile.weight ?? target)) || 1);
+    progressPct = Math.min(100, Math.round((Math.max(0, Math.abs(target - weight)) / safeTargetGap) * 100));
+    if (profile.goal === 'gain' && weight >= target) {
+      progressPct = 100;
+    }
+    if (profile.goal === 'lose' && weight <= target) {
+      progressPct = 100;
+    }
+  }
+
   const remainingKg = Math.abs(weight - target);
+
+  const handleProgressSave = async () => {
+    const supabase = createClient();
+    const parsed = Number(progressInput);
+    if (!Number.isFinite(parsed) || parsed <= 0) return;
+
+    setIsSavingProgress(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ weight: parsed })
+      .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+    setIsSavingProgress(false);
+
+    if (!error) {
+      router.refresh();
+    }
+  };
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -123,6 +152,24 @@ export default function ProfileClient({ profile }: { profile: ProfileView }) {
                   ? 'הגעת למשקל היעד — כל הכבוד!'
                   : `עוד ${remainingKg.toFixed(1)} ק״ג להשגת היעד.`}
               </p>
+            </div>
+            <div className="relative z-10 mt-4 flex items-center gap-2">
+              <input
+                type="number"
+                step="0.1"
+                value={progressInput}
+                onChange={(e) => setProgressInput(e.target.value)}
+                placeholder="משקל נוכחי"
+                className="w-full rounded-full border border-primary/40 bg-white/60 px-3 py-2 text-sm text-on-surface focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleProgressSave}
+                disabled={isSavingProgress}
+                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary"
+              >
+                {isSavingProgress ? 'שומר...' : 'שמור'}
+              </button>
             </div>
             <svg
               className="absolute -bottom-4 -left-4 text-primary/10 w-24 h-24"

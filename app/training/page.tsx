@@ -3,11 +3,11 @@
 import { useEffect, useState, FormEvent } from 'react';
 import AppHeader from '@/components/AppHeader';
 import MaterialIcon from '@/components/MaterialIcon';
+import { createClient } from '@/app/utils/supabase';
 import {
-  applyWorkoutDraft,
-  removeWorkoutEntry,
   type WorkoutEntry,
-  WORKOUT_STORAGE_KEY,
+  mapDbWorkoutToEntry,
+  mapEntryToDbWorkout,
   workoutMeta,
 } from '@/lib/workouts';
 
@@ -19,22 +19,36 @@ export default function TrainingPage() {
     duration: '',
     calories: '',
   });
-  const [workouts, setWorkouts] = useState<WorkoutEntry[]>(() => {
-    if (typeof window === 'undefined') return [];
-
-    try {
-      const saved = window.localStorage.getItem(WORKOUT_STORAGE_KEY);
-      return saved ? (JSON.parse(saved) as WorkoutEntry[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [workouts, setWorkouts] = useState<WorkoutEntry[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(workouts));
+    let isMounted = true;
+
+    async function loadWorkouts() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user || !isMounted) return;
+
+      const { data, error } = await supabase
+        .from('workouts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data && isMounted) {
+        setWorkouts(data.map(mapDbWorkoutToEntry));
+      }
     }
-  }, [workouts]);
+
+    loadWorkouts();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const resetDraft = () => {
     setDraft({ type: 'pilates', duration: '', calories: '' });
@@ -50,29 +64,101 @@ export default function TrainingPage() {
     });
   };
 
-  const handleSave = (e: FormEvent<HTMLFormElement>) => {
+  const handleSave = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
     const type = String(draft.type || 'pilates');
-    const duration = Number(draft.duration) || 0;
-    const calories = Number(draft.calories) || 0;
+    const duration = Math.max(0, Number(draft.duration) || 0);
+    const calories = Math.max(0, Number(draft.calories) || 0);
+    const meta = workoutMeta[type] ?? workoutMeta.pilates;
+    const currentTime = new Date().toISOString();
 
-    setWorkouts((prev) =>
-      applyWorkoutDraft(prev, {
-        id: editingId ?? undefined,
-        type,
-        duration,
-        calories,
-      })
-    );
+    const nextEntry: WorkoutEntry = {
+      id: editingId || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      type,
+      title: meta.title,
+      time: `היום, ${new Date().toLocaleTimeString('he-IL', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })}`,
+      duration,
+      calories,
+      icon: meta.icon,
+      bg: meta.bg,
+      color: meta.color,
+    };
 
-    resetDraft();
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    setLoading(true);
+
+    try {
+      const payload = mapEntryToDbWorkout(nextEntry, user.id);
+
+      if (editingId) {
+        const { error } = await supabase
+          .from('workouts')
+          .update({
+            type: payload.type,
+            title: payload.title,
+            time: payload.time,
+            duration: payload.duration,
+            calories: payload.calories,
+            icon: payload.icon,
+            bg: payload.bg,
+            color: payload.color,
+          })
+          .eq('id', editingId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        setWorkouts((prev) =>
+          prev.map((workout) => (workout.id === editingId ? nextEntry : workout))
+        );
+      } else {
+        const { error } = await supabase.from('workouts').insert({
+          ...payload,
+          created_at: currentTime,
+        });
+
+        if (error) throw error;
+
+        setWorkouts((prev) => [nextEntry, ...prev]);
+      }
+
+      resetDraft();
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (error) {
+      console.error('Workout save failed:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setWorkouts((prev) => removeWorkoutEntry(prev, id));
+  const handleDelete = async (id: string) => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('workouts')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+
+    if (!error) {
+      setWorkouts((prev) => prev.filter((workout) => workout.id !== id));
+    }
   };
 
   return (
@@ -182,7 +268,7 @@ export default function TrainingPage() {
                     type="submit"
                     className="flex-1 bg-primary text-on-primary text-label-md font-semibold py-4 rounded-full shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                   >
-                    <span>{editingId ? 'עדכון אימון' : 'שמירת אימון'}</span>
+                    <span>{loading ? 'שומר...' : editingId ? 'עדכון אימון' : 'שמירת אימון'}</span>
                     <MaterialIcon name="check" className="text-lg" />
                   </button>
                   {editingId && (

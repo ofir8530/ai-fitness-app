@@ -10,6 +10,20 @@ export type WorkoutEntry = {
   color: string;
 };
 
+export type WorkoutDbRow = {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  time: string;
+  duration: number;
+  calories: number;
+  icon: string;
+  bg: string;
+  color: string;
+  created_at?: string;
+};
+
 export type WorkoutDraft = {
   id?: string;
   type: string;
@@ -80,4 +94,33 @@ export function applyWorkoutDraft(
 
 export function removeWorkoutEntry(workouts: WorkoutEntry[], id: string): WorkoutEntry[] {
   return workouts.filter((workout) => workout.id !== id);
+}
+
+export function mapDbWorkoutToEntry(row: WorkoutDbRow): WorkoutEntry {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title || workoutMeta[row.type]?.title || 'אימון',
+    time: row.time || new Date(row.created_at || Date.now()).toLocaleString('he-IL'),
+    duration: Number(row.duration) || 0,
+    calories: Number(row.calories) || 0,
+    icon: row.icon || workoutMeta[row.type]?.icon || 'fitness_center',
+    bg: row.bg || workoutMeta[row.type]?.bg || 'bg-primary-fixed',
+    color: row.color || workoutMeta[row.type]?.color || 'text-primary',
+  };
+}
+
+export function mapEntryToDbWorkout(entry: WorkoutEntry, userId: string): Omit<WorkoutDbRow, 'created_at'> {
+  return {
+    id: entry.id,
+    user_id: userId,
+    type: entry.type,
+    title: entry.title,
+    time: entry.time,
+    duration: Number(entry.duration) || 0,
+    calories: Number(entry.calories) || 0,
+    icon: entry.icon,
+    bg: entry.bg,
+    color: entry.color,
+  };
 }

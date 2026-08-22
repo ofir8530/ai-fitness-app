@@ -76,6 +76,42 @@ export async function addFoodLog(formData: FormData) {
   return { ok: true };
 }
 
+export async function updateFoodLog(id: string, formData: FormData) {
+  const supabase = await createClientServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error('Unauthorized');
+
+  const foodName = String(formData.get('food_name') || '').trim();
+  if (!foodName) throw new Error('חסר שם מנה');
+
+  const payload = {
+    food_name: foodName,
+    calories: Number(formData.get('calories')) || 0,
+    protein: Number(formData.get('protein')) || 0,
+    carbs: Number(formData.get('carbs')) || 0,
+    fats: Number(formData.get('fats')) || 0,
+  };
+
+  const { data, error } = await supabase
+    .from('food_logs')
+    .update(payload)
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select('id, user_id, food_name, calories, protein, carbs, fats, created_at')
+    .single();
+
+  if (error) {
+    console.error('Error updating meal:', error);
+    throw new Error(error.message);
+  }
+
+  revalidateNutritionViews();
+  return { ok: true, meal: data as FoodLog };
+}
+
 export async function deleteFoodLog(id: string) {
   const supabase = await createClientServer();
   const {

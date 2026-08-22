@@ -200,7 +200,7 @@ export default function AddFoodModal({ onClose }: { onClose: () => void }) {
 
             <textarea
               placeholder="תארי את המנה (למשל: סלט עוף עם אורז...)"
-              className={styles.inputing}
+              className={`${styles.inputing} w-full resize-none break-words`}
               value={input}
               onChange={(e) => setInput(e.target.value)}
             />
@@ -248,7 +248,7 @@ export default function AddFoodModal({ onClose }: { onClose: () => void }) {
                     style={{ flex: 1 }}
                   />
                 ) : (
-                  <div style={{ flex: 1, fontWeight: 600, padding: '12px 0' }}>
+                  <div style={{ flex: 1, fontWeight: 600, padding: '12px 0', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                     {foodData.description || foodData.food_name || 'ארוחה'}
                   </div>
                 )}
