@@ -103,6 +103,16 @@ export default function RecipesPage() {
             </Link>
           )}
 
+          <div className="px-container-margin mb-4">
+            <Link
+              href="/recipes/new"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-label-md font-semibold text-on-primary shadow-md active:scale-95 transition-transform"
+            >
+              <MaterialIcon name="add_circle" className="text-[20px]" />
+              הוספת מתכון חדש
+            </Link>
+          </div>
+
           <div className="px-container-margin grid grid-cols-2 gap-4 pb-8">
             {filtered.map((recipe) => (
               <div

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import AppHeader from '@/components/AppHeader';
 import MaterialIcon from '@/components/MaterialIcon';
 import { useModal } from '@/components/ModalContext';
-import { deleteFoodLog } from '@/app/actions/foodActions';
+import { deleteFoodLog, updateFoodLog } from '@/app/actions/foodActions';
 import {
   DailyTotals,
   FoodLog,
@@ -13,6 +13,7 @@ import {
   formatMealTime,
   progressRatio,
   subtractFoodLogTotals,
+  sumFoodLogs,
 } from '@/lib/nutritionDay';
 
 export default function NutritionClient({
@@ -29,6 +30,7 @@ export default function NutritionClient({
   const [mealList, setMealList] = useState(meals);
   const [trackedTotals, setTrackedTotals] = useState(consumed);
   const [selectedMeal, setSelectedMeal] = useState<FoodLog | null>(null);
+  const [editingMeal, setEditingMeal] = useState<FoodLog | null>(null);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -38,6 +40,45 @@ export default function NutritionClient({
 
   const remaining = Math.max(targets.dailyCalories - trackedTotals.calories, 0);
   const progress = progressRatio(trackedTotals.calories, targets.dailyCalories) * 100;
+
+  useEffect(() => {
+    if (!selectedMeal) {
+      setEditingMeal(null);
+    }
+  }, [selectedMeal]);
+
+  const handleMealEditSave = async () => {
+    if (!editingMeal) return;
+
+    const formData = new FormData();
+    formData.append('food_name', (editingMeal.food_name || '').trim() || 'ארוחה');
+    formData.append('calories', String(Math.max(0, Number(editingMeal.calories) || 0)));
+    formData.append('protein', String(Math.max(0, Number(editingMeal.protein) || 0)));
+    formData.append('carbs', String(Math.max(0, Number(editingMeal.carbs) || 0)));
+    formData.append('fats', String(Math.max(0, Number(editingMeal.fats) || 0)));
+
+    const result = await updateFoodLog(editingMeal.id, formData);
+    if (!result.ok) return;
+
+    const nextMeals = mealList.map((meal) =>
+      meal.id === editingMeal.id
+        ? {
+            ...meal,
+            food_name: result.meal.food_name,
+            calories: result.meal.calories,
+            protein: result.meal.protein,
+            carbs: result.meal.carbs,
+            fats: result.meal.fats,
+          }
+        : meal
+    );
+
+    setMealList(nextMeals);
+    setTrackedTotals(sumFoodLogs(nextMeals));
+    setSelectedMeal(null);
+    setEditingMeal(null);
+    router.refresh();
+  };
 
   const handleDelete = (meal: FoodLog) => {
     const previousMeals = mealList;
@@ -56,6 +97,15 @@ export default function NutritionClient({
         setTrackedTotals(previousTotals);
       }
     });
+  };
+
+  const handleAddMealClick = (event?: React.SyntheticEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    console.log('[NutritionClient] add meal button clicked');
+    openModal();
   };
 
   return (
@@ -139,7 +189,7 @@ export default function NutritionClient({
                 </p>
                 <button
                   type="button"
-                  onClick={openModal}
+                  onClick={handleAddMealClick}
                   className="px-6 py-3 bg-primary text-on-primary rounded-full text-label-md font-semibold"
                 >
                   תיעוד ארוחה ראשונה
@@ -214,68 +264,144 @@ export default function NutritionClient({
               className="w-full max-w-md rounded-3xl bg-surface-container-low p-5 shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-headline text-headline-sm font-semibold text-on-surface">
+              <div className="flex items-center justify-between mb-4 gap-2">
+                <h3 className="font-headline text-headline-sm font-semibold text-on-surface break-words min-w-0">
                   {selectedMeal.food_name}
                 </h3>
-                <button
-                  type="button"
-                  onClick={() => setSelectedMeal(null)}
-                  className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center"
-                  aria-label="סגור"
-                >
-                  <MaterialIcon name="close" className="text-[20px]" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingMeal(selectedMeal)}
+                    className="rounded-full bg-primary px-3 py-2 text-label-sm font-semibold text-on-primary"
+                  >
+                    עריכה
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMeal(null)}
+                    className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center"
+                    aria-label="סגור"
+                  >
+                    <MaterialIcon name="close" className="text-[20px]" />
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-3 text-right">
-                <div className="flex items-center justify-between rounded-2xl bg-surface-container-high px-3 py-2">
-                  <span className="text-label-sm text-on-surface-variant">שעת תיעוד</span>
-                  <span className="text-label-md font-semibold text-on-surface">
-                    {formatMealTime(selectedMeal.created_at)}
-                  </span>
-                </div>
+              {editingMeal && editingMeal.id === selectedMeal.id ? (
+                <div className="space-y-3 text-right">
+                  <label className="block text-label-sm font-medium text-on-surface-variant">
+                    שם המנה
+                  </label>
+                  <textarea
+                    value={editingMeal.food_name}
+                    onChange={(event) =>
+                      setEditingMeal((current) =>
+                        current ? { ...current, food_name: event.target.value } : current
+                      )
+                    }
+                    className="w-full rounded-2xl border border-outline bg-surface-container px-3 py-2 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none break-words"
+                    rows={3}
+                  />
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-primary-fixed px-3 py-2">
-                    <div className="text-label-sm text-on-primary-fixed-variant">קלוריות</div>
-                    <div className="text-label-lg font-semibold text-on-primary-fixed">
-                      {selectedMeal.calories} kcal
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'קלוריות', key: 'calories' },
+                      { label: 'חלבון', key: 'protein' },
+                      { label: 'פחמימות', key: 'carbs' },
+                      { label: 'שומן', key: 'fats' },
+                    ].map((field) => (
+                      <label key={field.key} className="block">
+                        <span className="mb-1 block text-label-sm text-on-surface-variant">
+                          {field.label}
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          step="1"
+                          value={Number(editingMeal[field.key as keyof FoodLog] ?? 0)}
+                          onChange={(event) =>
+                            setEditingMeal((current) =>
+                              current
+                                ? {
+                                    ...current,
+                                    [field.key]: Number(event.target.value) || 0,
+                                  }
+                                : current
+                            )
+                          }
+                          className="w-full rounded-2xl border border-outline bg-surface-container px-3 py-2 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleMealEditSave}
+                      className="flex-1 rounded-full bg-primary px-4 py-3 text-label-md font-semibold text-on-primary"
+                    >
+                      שמור שינויים
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingMeal(null)}
+                      className="rounded-full border border-outline px-4 py-3 text-label-md font-semibold text-on-surface"
+                    >
+                      ביטול
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 text-right">
+                  <div className="flex items-center justify-between rounded-2xl bg-surface-container-high px-3 py-2">
+                    <span className="text-label-sm text-on-surface-variant">שעת תיעוד</span>
+                    <span className="text-label-md font-semibold text-on-surface">
+                      {formatMealTime(selectedMeal.created_at)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl bg-primary-fixed px-3 py-2">
+                      <div className="text-label-sm text-on-primary-fixed-variant">קלוריות</div>
+                      <div className="text-label-lg font-semibold text-on-primary-fixed">
+                        {selectedMeal.calories} kcal
+                      </div>
+                    </div>
+                    <div className="rounded-2xl bg-secondary-fixed px-3 py-2">
+                      <div className="text-label-sm text-on-secondary-fixed-variant">חלבון</div>
+                      <div className="text-label-lg font-semibold text-on-secondary-fixed">{selectedMeal.protein}g</div>
+                    </div>
+                    <div className="rounded-2xl bg-tertiary-fixed px-3 py-2">
+                      <div className="text-label-sm text-on-tertiary-fixed-variant">פחמימות</div>
+                      <div className="text-label-lg font-semibold text-on-tertiary-fixed">{selectedMeal.carbs}g</div>
+                    </div>
+                    <div className="rounded-2xl bg-primary-container px-3 py-2">
+                      <div className="text-label-sm text-on-primary-container">שומן</div>
+                      <div className="text-label-lg font-semibold text-on-primary-container">{selectedMeal.fats}g</div>
                     </div>
                   </div>
-                  <div className="rounded-2xl bg-secondary-fixed px-3 py-2">
-                    <div className="text-label-sm text-on-secondary-fixed-variant">חלבון</div>
-                    <div className="text-label-lg font-semibold text-on-secondary-fixed">{selectedMeal.protein}g</div>
-                  </div>
-                  <div className="rounded-2xl bg-tertiary-fixed px-3 py-2">
-                    <div className="text-label-sm text-on-tertiary-fixed-variant">פחמימות</div>
-                    <div className="text-label-lg font-semibold text-on-tertiary-fixed">{selectedMeal.carbs}g</div>
-                  </div>
-                  <div className="rounded-2xl bg-primary-container px-3 py-2">
-                    <div className="text-label-sm text-on-primary-container">שומן</div>
-                    <div className="text-label-lg font-semibold text-on-primary-container">{selectedMeal.fats}g</div>
-                  </div>
-                </div>
 
-                <div className="rounded-2xl bg-surface-container px-3 py-3">
-                  <p className="text-label-sm font-medium text-on-surface-variant mb-2">פירוט ארוחה</p>
-                  <ul className="space-y-2 text-body-md text-on-surface">
-                    <li>• שם: {selectedMeal.food_name}</li>
-                    <li>• קלוריות: {selectedMeal.calories}</li>
-                    <li>• חלבון: {selectedMeal.protein}g</li>
-                    <li>• פחמימות: {selectedMeal.carbs}g</li>
-                    <li>• שומן: {selectedMeal.fats}g</li>
-                  </ul>
+                  <div className="rounded-2xl bg-surface-container px-3 py-3">
+                    <p className="text-label-sm font-medium text-on-surface-variant mb-2">פירוט ארוחה</p>
+                    <ul className="space-y-2 text-body-md text-on-surface">
+                      <li>• שם: {selectedMeal.food_name}</li>
+                      <li>• קלוריות: {selectedMeal.calories}</li>
+                      <li>• חלבון: {selectedMeal.protein}g</li>
+                      <li>• פחמימות: {selectedMeal.carbs}g</li>
+                      <li>• שומן: {selectedMeal.fats}g</li>
+                    </ul>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}
 
         <button
           type="button"
-          onClick={openModal}
-          className="fixed bottom-24 left-[max(1.5rem,calc(50%-215px+1.5rem))] w-14 h-14 bg-primary text-on-primary rounded-full shadow-xl flex items-center justify-center transition-transform active:scale-95 z-50"
+          onClick={handleAddMealClick}
+          className="fixed bottom-24 left-[max(1.5rem,calc(50%-215px+1.5rem))] w-14 h-14 bg-primary text-on-primary rounded-full shadow-xl flex items-center justify-center transition-transform active:scale-95 z-[60]"
           aria-label="הוספת ארוחה"
         >
           <MaterialIcon name="add" className="text-[32px]" />

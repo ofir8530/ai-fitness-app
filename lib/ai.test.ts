@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { chooseBestOpenFoodFactsProduct, resolveGeminiModel } from './ai.ts';
+import {
+  analyzeFood,
+  chooseBestOpenFoodFactsProduct,
+  estimateFoodFromText,
+  extractExplicitFoodTerms,
+  resolveGeminiModel,
+} from './ai.ts';
 import { subtractFoodLogTotals } from './nutritionDay';
 import { trimChatHistory } from './chat';
 
@@ -74,4 +80,50 @@ test('chooseBestOpenFoodFactsProduct prefers the best matching product with nutr
   assert.equal(result?.protein, 10);
   assert.equal(result?.carbs, 3.6);
   assert.equal(result?.fats, 0.4);
+});
+
+test('extractExplicitFoodTerms keeps only values the user actually typed', async () => {
+  const result = await extractExplicitFoodTerms('סלט טונה');
+
+  assert.deepEqual(result, ['סלט טונה']);
+  assert.ok(!result.some((value) => /לחם|רוטב|גבינה|תוספת/i.test(value)));
+});
+
+test('estimateFoodFromText changes meaningfully when the user adds explicit ingredients', async () => {
+  const base = await estimateFoodFromText('סלט טונה');
+  const withBread = await estimateFoodFromText('סלט טונה עם פרוסת לחם');
+
+  assert.ok(withBread.calories > base.calories + 60, 'bread should meaningfully increase calories');
+  assert.ok(withBread.protein >= base.protein + 3, 'bread should add protein');
+  assert.ok(withBread.carbs > base.carbs + 10, 'bread should increase carbs');
+});
+
+test('analyzeFood does not call AI for plain text and keeps ingredients explicit-only', async () => {
+  const originalFetch = global.fetch;
+  const originalGeminiKey = process.env.GEMINI_API_KEY;
+  const originalOpenAIKey = process.env.OPENAI_API_KEY;
+  let fetchCalled = false;
+
+  process.env.GEMINI_API_KEY = 'test-gemini-key';
+  process.env.OPENAI_API_KEY = 'test-openai-key';
+  global.fetch = async () => {
+    fetchCalled = true;
+    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"description":"סלט טונה","calories":220,"protein":40,"carbs":22,"fats":12,"ingredients":["סלט טונה"]}' }] } }] }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  };
+
+  try {
+    const result = await analyzeFood('סלט טונה');
+
+    assert.ok(result);
+    assert.equal(result?.description, 'סלט טונה');
+    assert.deepEqual(result?.ingredients, ['סלט טונה']);
+    assert.equal(fetchCalled, false);
+  } finally {
+    if (originalGeminiKey === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = originalGeminiKey;
+    if (originalOpenAIKey === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = originalOpenAIKey;
+    global.fetch = originalFetch;
+  }
 });

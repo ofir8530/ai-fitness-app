@@ -42,6 +42,18 @@ export const workoutMeta: Record<string, { title: string; icon: string; bg: stri
   running: { title: 'ריצה', icon: 'directions_run', bg: 'bg-primary-fixed', color: 'text-primary' },
 };
 
+export function makeWorkoutId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+    const random = Math.random() * 16 | 0;
+    const value = character === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
 export function buildWorkoutEntry(type: string, duration: number, calories: number): WorkoutEntry {
   const meta = workoutMeta[type] ?? workoutMeta.pilates;
   const now = new Date();
@@ -51,7 +63,7 @@ export function buildWorkoutEntry(type: string, duration: number, calories: numb
   })}`;
 
   return {
-    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    id: makeWorkoutId(),
     type,
     title: meta.title,
     time,
@@ -110,9 +122,14 @@ export function mapDbWorkoutToEntry(row: WorkoutDbRow): WorkoutEntry {
   };
 }
 
-export function mapEntryToDbWorkout(entry: WorkoutEntry, userId: string): Omit<WorkoutDbRow, 'created_at'> {
+export function mapEntryToDbWorkout(
+  entry: WorkoutEntry,
+  userId: string
+): Omit<WorkoutDbRow, 'id' | 'created_at'> & { id?: string } {
+  const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(entry.id ?? '');
+
   return {
-    id: entry.id,
+    ...(isValidUuid ? { id: entry.id } : {}),
     user_id: userId,
     type: entry.type,
     title: entry.title,

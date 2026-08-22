@@ -2,6 +2,7 @@
 
 import {
   analyzeFood,
+  estimateFoodFromText,
   searchFoodFromOpenFoodFacts,
   type FoodSearchSource,
 } from '@/lib/ai';
@@ -19,16 +20,20 @@ export async function getFoodAnalysis(
 
   try {
     if (source === 'text') {
-      console.log('[getFoodAnalysis] looking up OpenFoodFacts for:', rawInput);
+      console.log('[getFoodAnalysis] text route: OpenFoodFacts lookup only');
       const externalResult = await searchFoodFromOpenFoodFacts(rawInput);
       if (externalResult) {
         console.log('[getFoodAnalysis] OpenFoodFacts result:', externalResult);
         return externalResult;
       }
+
+      const explicitTextFallback = await estimateFoodFromText(rawInput);
+      console.log('[getFoodAnalysis] text fallback without AI:', explicitTextFallback);
+      return explicitTextFallback;
     }
 
     const result = await analyzeFood(rawInput);
-    console.log('[getFoodAnalysis] final AI result:', result);
+    console.log('[getFoodAnalysis] image/complex analysis result:', result);
     return result;
   } catch (error) {
     console.error('AI Error:', error);

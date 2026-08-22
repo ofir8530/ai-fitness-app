@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFoodAnalysis } from '../app/actions/aiActions';
-import { addFoodLog } from '../app/actions/foodActions';
+import { addFoodLog, updateFoodLog } from '../app/actions/foodActions';
 import styles from './AddFoodModal.module.css';
 
 type FoodData = {
@@ -15,7 +15,19 @@ type FoodData = {
   fats?: number;
 };
 
-export default function AddFoodModal({ onClose }: { onClose: () => void }) {
+type AddFoodModalProps = {
+  onClose: () => void;
+  existingMeal?: {
+    id: string;
+    food_name?: string;
+    calories?: number;
+    protein?: number;
+    carbs?: number;
+    fats?: number;
+  } | null;
+};
+
+export default function AddFoodModal({ onClose, existingMeal = null }: AddFoodModalProps) {
   const router = useRouter();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,6 +43,30 @@ export default function AddFoodModal({ onClose }: { onClose: () => void }) {
     fats: 0,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!existingMeal) return;
+
+    const mealName = existingMeal.food_name || 'ארוחה';
+    const nextValues = {
+      calories: roundUpValue(Number(existingMeal.calories) || 0),
+      protein: roundUpValue(Number(existingMeal.protein) || 0),
+      carbs: roundUpValue(Number(existingMeal.carbs) || 0),
+      fats: roundUpValue(Number(existingMeal.fats) || 0),
+    };
+
+    setFoodData({
+      description: mealName,
+      food_name: mealName,
+      calories: nextValues.calories,
+      protein: nextValues.protein,
+      carbs: nextValues.carbs,
+      fats: nextValues.fats,
+    });
+    setValues(nextValues);
+    setInput('');
+    setIsEditingAnalysis(true);
+  }, [existingMeal]);
 
   const roundUpValue = (value: number) => {
     const parsed = Number(value);
@@ -64,35 +100,47 @@ export default function AddFoodModal({ onClose }: { onClose: () => void }) {
     setError('');
   };
 
-  const saveAnalysisChanges = () => {
+  const saveAnalysisChanges = async () => {
     if (!foodData) return;
-
-    const normalizedValues = {
-      calories: roundUpValue(values.calories),
-      protein: roundUpValue(values.protein),
-      carbs: roundUpValue(values.carbs),
-      fats: roundUpValue(values.fats),
-    };
 
     const nextDescription = (foodData.description || foodData.food_name || '').replace(/\s+/g, ' ').trim();
     const safeDescription = nextDescription || 'ארוחה';
 
-    setValues(normalizedValues);
+    console.log('[AddFoodModal] saveAnalysisChanges clicked: re-analyze updated meal text before saving', {
+      before: values,
+      updatedDescription: safeDescription,
+    });
+
     setFoodData((prev) =>
       prev
         ? {
             ...prev,
             description: safeDescription,
             food_name: safeDescription,
-            calories: normalizedValues.calories,
-            protein: normalizedValues.protein,
-            carbs: normalizedValues.carbs,
-            fats: normalizedValues.fats,
           }
         : prev
     );
-    setIsEditingAnalysis(false);
     setError('');
+
+    try {
+      setLoading(true);
+      const result = await getFoodAnalysis(safeDescription, 'text');
+      if (!result) {
+        throw new Error('לא התקבל ניתוח חדש למנה');
+      }
+
+      applyAnalysis({
+        ...result,
+        description: safeDescription,
+        food_name: safeDescription,
+      });
+      setIsEditingAnalysis(false);
+    } catch (error) {
+      console.error('[AddFoodModal] saveAnalysisChanges failed', error);
+      setError('שגיאה בחישוב מחדש של הערכים');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateValue = (key: keyof typeof values, nextValue: number) => {
@@ -161,22 +209,53 @@ export default function AddFoodModal({ onClose }: { onClose: () => void }) {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!foodData) return;
+
+    console.log('[AddFoodModal] handleSave start', {
+      foodData,
+      values,
+      source: input || foodData.description || foodData.food_name,
+      existingMeal,
+    });
+
     setSaving(true);
     setError('');
     try {
+      const normalizedFoodName = (foodData.description || foodData.food_name || input || 'ארוחה').trim();
+      const payloadValues = {
+        calories: roundUpValue(values.calories),
+        protein: roundUpValue(values.protein),
+        carbs: roundUpValue(values.carbs),
+        fats: roundUpValue(values.fats),
+      };
+
+      console.log('[AddFoodModal] handleSave sending payload', {
+        normalizedFoodName,
+        payloadValues,
+        existingMealId: existingMeal?.id,
+      });
+
       const formData = new FormData();
-      formData.append(
-        'food_name',
-        foodData.description || foodData.food_name || input || 'ארוחה'
-      );
-      formData.append('calories', String(roundUpValue(values.calories)));
-      formData.append('protein', String(roundUpValue(values.protein)));
-      formData.append('carbs', String(roundUpValue(values.carbs)));
-      formData.append('fats', String(roundUpValue(values.fats)));
-      await addFoodLog(formData);
+      formData.append('food_name', normalizedFoodName);
+      formData.append('calories', String(payloadValues.calories));
+      formData.append('protein', String(payloadValues.protein));
+      formData.append('carbs', String(payloadValues.carbs));
+      formData.append('fats', String(payloadValues.fats));
+
+      if (existingMeal?.id) {
+        await updateFoodLog(existingMeal.id, formData);
+      } else {
+        await addFoodLog(formData);
+      }
+
+      console.log('[AddFoodModal] handleSave success', {
+        normalizedFoodName,
+        payloadValues,
+      });
+
       router.refresh();
       onClose();
     } catch (err: unknown) {
+      console.error('[AddFoodModal] handleSave failed', err);
       setError(err instanceof Error ? err.message : 'שמירה נכשלה');
     } finally {
       setSaving(false);
@@ -240,12 +319,12 @@ export default function AddFoodModal({ onClose }: { onClose: () => void }) {
               <label htmlFor="meal-name">שם המנה</label>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 {isEditingAnalysis ? (
-                  <input
+                  <textarea
                     id="meal-name"
-                    className={styles.input}
+                    className={`${styles.input} w-full resize-none break-words min-h-[52px]`}
                     value={foodData.description || foodData.food_name || ''}
                     onChange={(e) => updateDescription(e.target.value)}
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                   />
                 ) : (
                   <div style={{ flex: 1, fontWeight: 600, padding: '12px 0', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>

@@ -55,79 +55,176 @@ function toNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function estimateFoodFromText(input: string): FoodAnalysis {
-  const normalized = input.toLowerCase();
-  const ingredientHints: string[] = [];
+export async function extractExplicitFoodTerms(input: string): Promise<string[]> {
+  const trimmed = input.trim();
+  if (!trimmed) return [];
 
-  if (/פסטה|pasta/.test(normalized)) ingredientHints.push('פסטה');
-  if (/רוטב|sauce|pesto/.test(normalized)) ingredientHints.push('רוטב');
-  if (/גבינה|cheese/.test(normalized)) ingredientHints.push('גבינה');
-  if (/עוף|chicken/.test(normalized)) ingredientHints.push('עוף');
-  if (/אורז|rice/.test(normalized)) ingredientHints.push('אורז');
-  if (/סלט|salad|ירקות|vegetable/.test(normalized)) ingredientHints.push('ירקות');
-  if (/ביצה|egg/.test(normalized)) ingredientHints.push('ביצה');
-  if (/אבוקדו|avocado/.test(normalized)) ingredientHints.push('אבוקדו');
-  if (/שמן|oil|חמאה|butter/.test(normalized)) ingredientHints.push('שמן');
+  const parts = trimmed
+    .split(/[\n,]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
 
-  let calories = 220;
-  if (/פיתה|לחם|toast|bagel|naan/.test(normalized)) calories += 180;
-  if (/אורז|rice|פסטה|pasta|קינואה|quinoa|couscous/.test(normalized)) calories += 220;
-  if (/עוף|chicken|טונה|tuna|דג|salmon|beef|steak|turkey/.test(normalized)) calories += 260;
-  if (/ביצה|egg/.test(normalized)) calories += 90;
-  if (/אבוקדו|avocado/.test(normalized)) calories += 140;
-  if (/שמן|oil|חמאה|butter/.test(normalized)) calories += 120;
-  if (/גבינה|cheese|יוגורט|yogurt|milk/.test(normalized)) calories += 110;
-  if (/סלט|salad|vegetable|spinach|lettuce/.test(normalized)) calories += 80;
-  if (/שקדים|nuts|almond|peanut/.test(normalized)) calories += 110;
-  if (/אפונה|bean|lentil|chickpea/.test(normalized)) calories += 120;
+  return parts.length ? parts : [trimmed];
+}
 
-  const protein = Math.max(10, Math.round(calories * 0.22));
-  const carbs = Math.max(10, Math.round(calories * 0.38));
-  const fats = Math.max(8, Math.round(calories * 0.4));
-  const ingredients = ingredientHints.length
-    ? ingredientHints
-    : [input.trim() || 'מרכיבים'];
+export async function estimateFoodFromText(input: string): Promise<FoodAnalysis> {
+  const trimmed = input.trim();
+  const explicitIngredients = trimmed ? [trimmed] : [];
+  const normalized = trimmed.toLowerCase();
+
+  let calories = 160;
+  let protein = 18;
+  let carbs = 16;
+  let fats = 8;
+
+  if (/טונה|tuna/.test(normalized)) {
+    calories += 95;
+    protein += 16;
+    fats += 3;
+  }
+
+  if (/עוף|chicken/.test(normalized)) {
+    calories += 120;
+    protein += 22;
+    fats += 5;
+  }
+
+  if (/ביצה|egg/.test(normalized)) {
+    calories += 80;
+    protein += 7;
+    fats += 5;
+  }
+
+  if (/סלט|salad/.test(normalized)) {
+    calories += 45;
+    carbs += 10;
+  }
+
+  if (/(עם|with)\s+((פרוסת\s+)?לחם|bread|toast|pita|bagel|sandwich)/.test(normalized)) {
+    calories += 140;
+    protein += 5;
+    carbs += 24;
+    fats += 2;
+  }
+
+  if (/(עם|with)\s+((פרוסת\s+)?גבינה|cheese)/.test(normalized)) {
+    calories += 120;
+    protein += 8;
+    fats += 9;
+  }
+
+  if (/(עם|with)\s+((חתיכת\s+)?אבוקדו|avocado)/.test(normalized)) {
+    calories += 160;
+    carbs += 12;
+    fats += 15;
+  }
+
+  if (/(עם|with)\s+((כמות\s+)?רוטב|sauce|oil|שמן)/.test(normalized)) {
+    calories += 100;
+    fats += 11;
+  }
+
+  if (trimmed.length > 20) {
+    calories += Math.min(70, Math.round(trimmed.length * 0.8));
+  }
 
   return {
-    description: input.trim().slice(0, 80) || 'ארוחה',
-    calories: Math.round(calories),
-    protein,
-    carbs,
-    fats,
-    ingredients,
+    description: trimmed.slice(0, 80) || 'ארוחה',
+    calories: Math.max(60, Math.round(calories)),
+    protein: Math.max(8, Math.round(protein)),
+    carbs: Math.max(8, Math.round(carbs)),
+    fats: Math.max(4, Math.round(fats)),
+    ingredients: explicitIngredients.length ? explicitIngredients : ['מזון'],
   };
 }
 
-export async function chooseBestOpenFoodFactsProduct(payload: {
-  products?: OpenFoodFactsProduct[];
-} | null | undefined): Promise<FoodAnalysis | null> {
+function getOpenFoodFactsMealScale(query: string) {
+  const normalized = query.toLowerCase();
+
+  let servingWeight = 220;
+  if (/סלט|salad|bowls?|רוסטב|wrap|soup/.test(normalized)) servingWeight = 260;
+  if (/(עם|with)\s+((פרוסת\s+)?לחם|bread|toast|sandwich)/.test(normalized)) servingWeight += 80;
+  if (/(עם|with)\s+((פרוסת\s+)?גבינה|cheese)/.test(normalized)) servingWeight += 40;
+  if (/(עם|with)\s+((חתיכת\s+)?אבוקדו|avocado)/.test(normalized)) servingWeight += 50;
+  if (/(עם|with)\s+((כמות\s+)?רוטב|sauce|oil|שמן)/.test(normalized)) servingWeight += 25;
+  if (/(שניצל|burger|פיתה| pita|bagel)/.test(normalized)) servingWeight += 60;
+
+  return Math.max(180, Math.min(420, servingWeight));
+}
+
+function getExplicitMealAdditions(query: string) {
+  const normalized = query.toLowerCase();
+  const bonuses = {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fats: 0,
+  };
+
+  if (/(עם|with)\s+((פרוסת\s+)?לחם|bread|toast)/.test(normalized)) {
+    bonuses.calories += 150;
+    bonuses.protein += 6;
+    bonuses.carbs += 25;
+    bonuses.fats += 2;
+  }
+
+  if (/(עם|with)\s+((פרוסת\s+)?גבינה|cheese)/.test(normalized)) {
+    bonuses.calories += 110;
+    bonuses.protein += 7;
+    bonuses.carbs += 1;
+    bonuses.fats += 9;
+  }
+
+  if (/(עם|with)\s+((חתיכת\s+)?אבוקדו|avocado)/.test(normalized)) {
+    bonuses.calories += 160;
+    bonuses.protein += 2;
+    bonuses.carbs += 12;
+    bonuses.fats += 15;
+  }
+
+  if (/(עם|with)\s+((כמות\s+)?רוטב|sauce|oil|שמן)/.test(normalized)) {
+    bonuses.calories += 110;
+    bonuses.protein += 0;
+    bonuses.carbs += 1;
+    bonuses.fats += 12;
+  }
+
+  return bonuses;
+}
+
+export async function chooseBestOpenFoodFactsProduct(
+  payload: {
+    products?: OpenFoodFactsProduct[];
+  } | null | undefined,
+  query = ''
+): Promise<FoodAnalysis | null> {
   if (!payload?.products?.length) return null;
 
   for (const product of payload.products) {
     const nutriments = product.nutriments ?? {};
-    const calories =
+    const caloriesPer100 =
       toNumberFromValue(
         nutriments['energy-kcal_100g'] ??
           nutriments['energy-kcal_serving'] ??
           nutriments['energy_100g'] ??
           nutriments['energy-kj_100g']
       ) || 0;
-    const protein =
+    const proteinPer100 =
       toNumberFromValue(
         nutriments.proteins_100g ?? nutriments.protein_100g ?? nutriments.proteins
       ) || 0;
-    const carbs =
+    const carbsPer100 =
       toNumberFromValue(
         nutriments.carbohydrates_100g ??
           nutriments.carbohydrate_100g ??
           nutriments.carbohydrates
       ) || 0;
-    const fats =
+    const fatsPer100 =
       toNumberFromValue(
         nutriments.fat_100g ?? nutriments.fats_100g ?? nutriments.fat
       ) || 0;
 
-    if (calories <= 0 && protein <= 0 && carbs <= 0 && fats <= 0) {
+    if (caloriesPer100 <= 0 && proteinPer100 <= 0 && carbsPer100 <= 0 && fatsPer100 <= 0) {
       continue;
     }
 
@@ -139,12 +236,30 @@ export async function chooseBestOpenFoodFactsProduct(payload: {
           .slice(0, 6)
       : ['מזון'];
 
+    if (!query.trim()) {
+      return {
+        description: getBestProductName(product),
+        calories: caloriesPer100,
+        protein: proteinPer100,
+        carbs: carbsPer100,
+        fats: fatsPer100,
+        ingredients,
+      };
+    }
+
+    const servingWeight = getOpenFoodFactsMealScale(query);
+    const explicitBonuses = getExplicitMealAdditions(query);
+    const scaledCalories = Math.max(0, Math.round((caloriesPer100 * servingWeight) / 100 + explicitBonuses.calories));
+    const scaledProtein = Math.max(0, Math.round((proteinPer100 * servingWeight) / 100 + explicitBonuses.protein));
+    const scaledCarbs = Math.max(0, Math.round((carbsPer100 * servingWeight) / 100 + explicitBonuses.carbs));
+    const scaledFats = Math.max(0, Math.round((fatsPer100 * servingWeight) / 100 + explicitBonuses.fats));
+
     return {
       description: getBestProductName(product),
-      calories,
-      protein,
-      carbs,
-      fats,
+      calories: scaledCalories,
+      protein: scaledProtein,
+      carbs: scaledCarbs,
+      fats: scaledFats,
       ingredients,
     };
   }
@@ -178,7 +293,7 @@ export async function searchFoodFromOpenFoodFacts(
     if (!response.ok) return null;
 
     const data = await response.json();
-    return chooseBestOpenFoodFactsProduct(data);
+    return chooseBestOpenFoodFactsProduct(data, normalizedQuery);
   } catch (error) {
     console.warn('Open Food Facts search failed:', error);
     return null;
@@ -418,6 +533,13 @@ export async function analyzeFood(input: string, imageBase64?: string): Promise<
 
   if (!textInput && !effectiveImage) return null;
 
+  // Plain text entries must never hit AI. They are resolved directly from the external food database
+  // or by a conservative explicit-text fallback without inventing extra ingredients.
+  if (!effectiveImage && textInput) {
+    console.log('[analyzeFood] plain text route: skipping AI and returning explicit-only estimate');
+    return estimateFoodFromText(textInput);
+  }
+
   const prompt = `את מומחית תזונה ומערכות ניתוח מזון. התפקיד שלך הוא לנתח את נתוני הקלט (טקסט ו/או תמונה מצורפת) ולהחזיר אובייקט JSON תקני בלבד, ללא שום טקסט נוסף לפני או אחרי.
 
 מבנה ה-JSON הנדרש לחזרה:
@@ -427,17 +549,17 @@ export async function analyzeFood(input: string, imageBase64?: string): Promise<
   "protein": מספר (גרם חלבון),
   "carbs": מספר (גרם פחמימות),
   "fats": מספר (גרם שומנים),
-  "ingredients": ["רשימת", "מרכיבים", "מרכזיים"]
+  "ingredients": ["רשימת", "מרכיבים", "שנכתבו או נראים במפורש"]
 }
 
-הנחיות קריטיות למניעת שגיאות:
-1. שדה ה-ingredients חייב תמיד להכיל לפחות פריט אחד (אסור שיחזור מערך ריק []). אם התמונה או הטקסט חלקיים, חלצי את המרכיבים הנראים לעין או הסיקי אותם מהתיאור הטקסטואלי.
-2. אל תאפס ואל תחזיר ערכים ריקים או חלקיים שיגרמו לשגיאות ב-State של האפליקציה. שמרי על עקביות ודיוק שמרני.
-3. התייחסי לכל רכיב בנפרד (למשל בפסטה: פסטה, רוטב, גבינה) ולא לקטגוריה גנרית אחת.
-4. אם יש רוטב, גבינה או פסטה יחד, כתבי אותם בנפרד בתוך ingredients.
+הנחיות קריטיות מחייבות:
+1. אל תוסיף מאף פעם רכיבים שלא צוינו במפורש בטקסט או שנראים בבירור בתמונה.
+2. אם המשתמש כתב רק "סלט טונה", אז ingredients חייב להכיל רק פריטים שנמצאים שם, ולא "לחם", "רוטב", "גבינה" או תוספות כלשהן.
+3. אם יש תמונה, נתחי רק מה שנראה במפורש ובבירור. אם יש ספק או פריטים לא ברורים, אל תכלילי אותם.
+4. אם אין לכם ביטחון מלא לגבי רכיב מסוים, העדיפו לשמור את תיאור הקלט כערך description ולא להמציא מרכיבים.
 5. החזרי JSON תקני בלבד, ללא fenced code blocks, ללא Markdown, ללא הערות.
-${effectiveImage ? '\nיש תמונה מצורפת של המנה - נתחי אותה ישירות (זהי את המרכיבים הנראים לעין, כמויות משוערות וכו׳).' : ''}
-${textInput ? `\nתיאור טקסטואלי נוסף מהמשתמש: ${textInput}` : ''}`;
+${effectiveImage ? '\nיש תמונה מצורפת של המנה - נתחי אותה ישירות, אך רק לפי מה שנראה בבירור ולא לפי השערות.' : ''}
+${textInput ? `\nתיאור טקסטואלי מהמשתמש: ${textInput}` : ''}`;
 
   console.log('[analyzeFood] textInput:', textInput || '(none)');
   console.log('[analyzeFood] has image:', Boolean(effectiveImage));

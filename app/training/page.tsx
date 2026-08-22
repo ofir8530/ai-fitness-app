@@ -6,6 +6,7 @@ import MaterialIcon from '@/components/MaterialIcon';
 import { createClient } from '@/app/utils/supabase';
 import {
   type WorkoutEntry,
+  makeWorkoutId,
   mapDbWorkoutToEntry,
   mapEntryToDbWorkout,
   workoutMeta,
@@ -81,7 +82,7 @@ export default function TrainingPage() {
     const currentTime = new Date().toISOString();
 
     const nextEntry: WorkoutEntry = {
-      id: editingId || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      id: editingId || makeWorkoutId(),
       type,
       title: meta.title,
       time: `היום, ${new Date().toLocaleTimeString('he-IL', {
@@ -122,10 +123,13 @@ export default function TrainingPage() {
           prev.map((workout) => (workout.id === editingId ? nextEntry : workout))
         );
       } else {
-        const { error } = await supabase.from('workouts').insert({
-          ...payload,
-          created_at: currentTime,
-        });
+        const { id: _ignoredId, ...insertPayload } = payload;
+        const { error } = await supabase.from('workouts').insert([
+          {
+            ...insertPayload,
+            created_at: currentTime,
+          },
+        ]);
 
         if (error) throw error;
 

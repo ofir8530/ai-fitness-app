@@ -1,8 +1,13 @@
 'use client'
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useMemo, useState, useCallback } from 'react';
 
-// יוצרים את ה"מחסן"
-const ModalContext = createContext({
+type ModalContextValue = {
+  isOpen: boolean;
+  openModal: () => void;
+  closeModal: () => void;
+};
+
+const ModalContext = createContext<ModalContextValue>({
   isOpen: false,
   openModal: () => {},
   closeModal: () => {},
@@ -10,15 +15,26 @@ const ModalContext = createContext({
 
 export const ModalProvider = ({ children }: { children: React.ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const openModal = () => setIsOpen(true);
-  const closeModal = () => setIsOpen(false);
+  const openModal = useCallback(() => {
+    console.log('[ModalContext] openModal called');
+    setIsOpen(true);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    console.log('[ModalContext] closeModal called');
+    setIsOpen(false);
+  }, []);
+
+  const value = useMemo(
+    () => ({ isOpen, openModal, closeModal }),
+    [isOpen, openModal, closeModal]
+  );
 
   return (
-    <ModalContext.Provider value={{ isOpen, openModal, closeModal }}>
+    <ModalContext.Provider value={value}>
       {children}
     </ModalContext.Provider>
   );
 };
 
-// הוק קטן שמאפשר לכל קומפוננטה להשתמש במחסן
 export const useModal = () => useContext(ModalContext);
